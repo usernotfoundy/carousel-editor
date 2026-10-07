@@ -501,6 +501,58 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   background: var(--bg);
 }
 
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+
+.splash.is-leaving {
+  animation: splash-out 480ms ease forwards;
+  pointer-events: none;
+}
+
+.splash-lockup {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  animation: splash-in 420ms ease both;
+}
+
+.splash-mark {
+  width: 92px;
+  height: 92px;
+  display: block;
+  border-radius: 22px;
+  object-fit: cover;
+}
+
+.splash-handle {
+  color: #f4f1ea;
+  font-size: clamp(28px, 4.6vw, 44px);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+@keyframes splash-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes splash-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-lockup, .splash.is-leaving { animation: none; }
+  .splash.is-leaving { opacity: 0; }
+}
+
 .mobile-only { display: none; }
 .hide-on-mobile { display: inline-flex; }
 

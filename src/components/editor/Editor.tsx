@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEditor } from '../../context/EditorContext';
 import { useViewport } from '../../hooks/useViewport';
 import { isTypingTarget } from '../../utils/geometry';
@@ -13,7 +13,11 @@ import { StatusBar } from './StatusBar';
 import { Toolbar } from './Toolbar';
 import { TopBar } from './TopBar';
 import { MobileDock } from './MobileDock';
+import { SplashScreen } from './SplashScreen';
 import { CarouselPreview } from '../preview/CarouselPreview';
+
+const SPLASH_HOLD_MS = 1400;
+const SPLASH_FADE_MS = 480;
 
 export function Editor() {
   const editor = useEditor();
@@ -22,6 +26,8 @@ export function Editor() {
   const [exporting, setExporting] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
   const [panel, setPanel] = useState<'layers' | 'properties' | null>(null);
+  const [splash, setSplash] = useState<'hold' | 'leave' | 'done'>('hold');
+  const openedAt = useRef(performance.now());
 
   const registerPlacement = editor.registerPlacement;
   const ready = editor.ready;
@@ -29,6 +35,20 @@ export function Editor() {
   useEffect(() => {
     registerPlacement(viewport.getPlacement);
   }, [registerPlacement, viewport.getPlacement]);
+
+  useEffect(() => {
+    if (!ready || splash !== 'hold') return;
+    const elapsed = performance.now() - openedAt.current;
+    const wait = Math.max(0, SPLASH_HOLD_MS - elapsed);
+    const handle = window.setTimeout(() => setSplash('leave'), wait);
+    return () => window.clearTimeout(handle);
+  }, [ready, splash]);
+
+  useEffect(() => {
+    if (splash !== 'leave') return;
+    const handle = window.setTimeout(() => setSplash('done'), SPLASH_FADE_MS);
+    return () => window.clearTimeout(handle);
+  }, [splash]);
 
   useEffect(() => {
     if (!import.meta.env.DEV || !ready) return;
@@ -103,15 +123,11 @@ export function Editor() {
   }, [confirmNew, editor, exporting, preview, viewport]);
 
   if (!editor.ready) {
-    return (
-      <div className="boot">
-        <img className="brand-mark" src="/favicon.png" alt="" />
-        <p>Opening canvas…</p>
-      </div>
-    );
+    return <SplashScreen leaving={false} />;
   }
 
   return (
+    <>
     <div className="app">
       <TopBar
         onPreview={() => setPreview(true)}
@@ -164,5 +180,7 @@ export function Editor() {
         </Modal>
       )}
     </div>
+    {splash !== 'done' && <SplashScreen leaving={splash === 'leave'} />}
+    </>
   );
 }
