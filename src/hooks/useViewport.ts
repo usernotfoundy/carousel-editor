@@ -68,6 +68,23 @@ export function useViewport(canvas: CanvasSettings) {
     });
   }, [applyView]);
 
+  const zoomToPoint = useCallback(
+    (
+      pointer: { x: number; y: number },
+      nextZoom: number,
+      origin: { zoom: number; pan: { x: number; y: number }; pointer: { x: number; y: number } },
+    ) => {
+      const zoomValue = clamp(nextZoom, MIN_ZOOM, MAX_ZOOM);
+      const docX = (origin.pointer.x - origin.pan.x) / origin.zoom;
+      const docY = (origin.pointer.y - origin.pan.y) / origin.zoom;
+      applyView(zoomValue, {
+        x: pointer.x - docX * zoomValue,
+        y: pointer.y - docY * zoomValue,
+      });
+    },
+    [applyView],
+  );
+
   const zoomAroundCenter = useCallback(
     (nextZoom: number) => {
       const oldZoom = zoomRef.current;
@@ -139,6 +156,7 @@ export function useViewport(canvas: CanvasSettings) {
     activeSlide,
     onSize,
     zoomAt,
+    zoomToPoint,
     zoomAroundCenter,
     panBy,
     setPanAbsolute,

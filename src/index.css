@@ -26,6 +26,7 @@ html, body, #root {
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
+  touch-action: manipulation;
 }
 
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -257,10 +258,11 @@ button { cursor: pointer; }
   background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
   background-size: 22px 22px;
   cursor: default;
+  touch-action: none;
 }
 .stage-wrap.space { cursor: grab; }
 .stage-wrap.panning { cursor: grabbing; }
-.stage-wrap canvas { display: block; }
+.stage-wrap canvas { display: block; touch-action: none; }
 
 .slide-badge {
   position: absolute;

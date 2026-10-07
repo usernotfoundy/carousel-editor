@@ -75,6 +75,7 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
   const [fontTick, setFontTick] = useState(0);
   const dragDepth = useRef(0);
   const panSession = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const { zoomRef, panRef, zoomToPoint } = viewport;
 
   const { canvas } = doc;
   const docWidth = totalWidth(canvas);
@@ -110,6 +111,85 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
     wrap.addEventListener('wheel', onWheel, { passive: false });
     return () => wrap.removeEventListener('wheel', onWheel);
   }, [viewport]);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const blockGesture = (event: Event) => event.preventDefault();
+    const pinch: {
+      distance: number;
+      zoom: number;
+      panX: number;
+      panY: number;
+      midX: number;
+      midY: number;
+    } | null = { distance: 0, zoom: 1, panX: 0, panY: 0, midX: 0, midY: 0 };
+    let active = false;
+
+    const pointOf = (touch: Touch, rect: DOMRect) => ({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    });
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length < 2) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const [first, second] = [event.touches[0], event.touches[1]];
+      const rect = wrap.getBoundingClientRect();
+      const mid = {
+        x: (pointOf(first, rect).x + pointOf(second, rect).x) / 2,
+        y: (pointOf(first, rect).y + pointOf(second, rect).y) / 2,
+      };
+      pinch.distance = Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+      pinch.zoom = zoomRef.current;
+      pinch.panX = panRef.current.x;
+      pinch.panY = panRef.current.y;
+      pinch.midX = mid.x;
+      pinch.midY = mid.y;
+      active = pinch.distance > 0;
+      panSession.current = null;
+      setPanning(false);
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!active || event.touches.length < 2) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const [first, second] = [event.touches[0], event.touches[1]];
+      const rect = wrap.getBoundingClientRect();
+      const distance = Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+      const mid = {
+        x: (pointOf(first, rect).x + pointOf(second, rect).x) / 2,
+        y: (pointOf(first, rect).y + pointOf(second, rect).y) / 2,
+      };
+      zoomToPoint(mid, pinch.zoom * (distance / pinch.distance), {
+        zoom: pinch.zoom,
+        pan: { x: pinch.panX, y: pinch.panY },
+        pointer: { x: pinch.midX, y: pinch.midY },
+      });
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length >= 2) return;
+      active = false;
+    };
+
+    wrap.addEventListener('touchstart', onTouchStart, { passive: false, capture: true });
+    wrap.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
+    wrap.addEventListener('touchend', onTouchEnd);
+    wrap.addEventListener('touchcancel', onTouchEnd);
+    document.addEventListener('gesturestart', blockGesture, { passive: false });
+    document.addEventListener('gesturechange', blockGesture, { passive: false });
+    return () => {
+      wrap.removeEventListener('touchstart', onTouchStart, { capture: true });
+      wrap.removeEventListener('touchmove', onTouchMove, { capture: true });
+      wrap.removeEventListener('touchend', onTouchEnd);
+      wrap.removeEventListener('touchcancel', onTouchEnd);
+      document.removeEventListener('gesturestart', blockGesture);
+      document.removeEventListener('gesturechange', blockGesture);
+    };
+  }, [panRef, zoomRef, zoomToPoint]);
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
