@@ -73,9 +73,9 @@ button { cursor: pointer; }
 .brand-mark {
   width: 28px;
   height: 28px;
-  display: grid;
-  place-items: center;
-  color: var(--accent);
+  display: block;
+  border-radius: 7px;
+  object-fit: cover;
 }
 
 .brand-copy { flex-direction: column; align-items: flex-start; gap: 0; }

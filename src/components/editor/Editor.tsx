@@ -105,7 +105,7 @@ export function Editor() {
   if (!editor.ready) {
     return (
       <div className="boot">
-        <span className="brand-mark" aria-hidden="true" />
+        <img className="brand-mark" src="/favicon.png" alt="" />
         <p>Opening canvas…</p>
       </div>
     );

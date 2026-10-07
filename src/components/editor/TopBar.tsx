@@ -22,13 +22,7 @@ export function TopBar({
   return (
     <header className="topbar">
       <div className="brand">
-        <span className="brand-mark" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 22 22">
-            <rect x="1" y="3" width="5" height="16" rx="1.2" fill="currentColor" opacity="0.4" />
-            <rect x="8.5" y="3" width="5" height="16" rx="1.2" fill="currentColor" opacity="0.7" />
-            <rect x="16" y="3" width="5" height="16" rx="1.2" fill="currentColor" />
-          </svg>
-        </span>
+        <img className="brand-mark" src="/favicon.png" alt="" />
         <div className="brand-copy">
           <strong>Continuum</strong>
           <input
