@@ -1,75 +1,28 @@
-# React + TypeScript + Vite
+# Continuum
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Continuum is a browser editor for seamless Instagram carousels.
 
-Currently, two official plugins are available:
+Most carousel tools treat each slide as its own canvas. Continuum does the opposite: you design one wide canvas, and the app cuts that canvas into individual slides when you export. A photo, a headline, or a shape can sit across a slide boundary and still line up when someone swipes through the post.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Purpose
 
-## React Compiler
+Instagram carousels are a sequence of images, but the best ones read as a single picture. Continuum keeps that picture intact while you work, then exports each frame at the exact slide size so the seams match.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The editor is desktop-first, with a floating tool bar on smaller screens. Your project is saved in the browser, so a refresh restores the canvas.
 
-## Expanding the ESLint configuration
+## What you can do
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Choose a portrait (1080×1350), square (1080×1080), or landscape (1080×566) format, and set how many slides the canvas contains.
+- Place images, text, and shapes anywhere on the continuous canvas, including across slide guides.
+- Move, resize, rotate, and reorder those elements, with undo and redo.
+- Preview the carousel one slide at a time.
+- Export each slide as its own PNG or JPG and save the files one by one.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Slide guides, selection boxes, and the rest of the editor chrome are only for editing. They are not part of the exported images.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Run
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
-
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
 ```
