@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import { Download, Eye, FilePlus2, Redo2, Undo2 } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 
@@ -11,38 +10,13 @@ export function TopBar({
   onExport: () => void;
   onNew: () => void;
 }) {
-  const { document: doc, undo, redo, canUndo, canRedo, setProjectName, saveState } = useEditor();
-  const [name, setName] = useState(doc.name);
-  const focused = useRef(false);
-
-  useEffect(() => {
-    if (!focused.current) setName(doc.name);
-  }, [doc.name]);
+  const { undo, redo, canUndo, canRedo, saveState } = useEditor();
 
   return (
     <header className="topbar">
       <div className="brand">
         <img className="brand-mark" src="/favicon.png" alt="" />
-        <div className="brand-copy">
-          <strong>Continuum</strong>
-          <input
-            className="name-input"
-            aria-label="Project name"
-            value={name}
-            onFocus={() => {
-              focused.current = true;
-            }}
-            onChange={(event) => setName(event.target.value)}
-            onBlur={() => {
-              focused.current = false;
-              if (name.trim() && name.trim() !== doc.name) setProjectName(name);
-              else setName(doc.name);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') event.currentTarget.blur();
-            }}
-          />
-        </div>
+        <strong>Continuum</strong>
       </div>
       <div className="top-center">
         <button type="button" className="icon-btn" aria-label="Undo" title="Undo" disabled={!canUndo} onClick={undo}>
