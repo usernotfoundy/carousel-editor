@@ -16,7 +16,7 @@ import { MobileDock } from './MobileDock';
 import { SplashScreen } from './SplashScreen';
 import { CarouselPreview } from '../preview/CarouselPreview';
 
-const SPLASH_HOLD_MS = 1400;
+const SPLASH_HOLD_MS = 2300;
 const SPLASH_FADE_MS = 480;
 
 export function Editor() {
