@@ -94,15 +94,30 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                 <div className="template-preview-container">
                   <div className="template-preview-top-bar">
                     <span className="template-preview-badge">10 Slides • 4:5 Portrait</span>
-                    <button
-                      type="button"
-                      className="template-inspect-chip"
-                      onClick={() => setPreviewTemplate(template)}
-                      title="Inspect full panorama"
-                    >
-                      <Eye size={12} />
-                      Inspect
-                    </button>
+                    <div className="template-preview-quick-actions">
+                      <button
+                        type="button"
+                        className="template-inspect-chip"
+                        onClick={() => setPreviewTemplate(template)}
+                        title="Inspect full layout"
+                      >
+                        <Eye size={12} />
+                        Inspect layout
+                      </button>
+                      <button
+                        type="button"
+                        className="template-use-chip"
+                        disabled={isApplying}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleApply(template.meta.id);
+                        }}
+                        title="Use this template"
+                      >
+                        <ArrowRight size={12} />
+                        Use template
+                      </button>
+                    </div>
                   </div>
                   <div
                     className="template-preview-wrap"
@@ -155,9 +170,10 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                   <div className="template-card-actions">
                     <button
                       type="button"
-                      className="text-btn secondary template-inspect-btn"
+                      className="text-btn template-inspect-btn"
                       onClick={() => setPreviewTemplate(template)}
                     >
+                      <Eye size={14} />
                       Inspect layout
                     </button>
                     <button
@@ -171,7 +187,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                       ) : (
                         <>
                           <ArrowRight size={14} />
-                          Use this template
+                          Use template
                         </>
                       )}
                     </button>
@@ -201,14 +217,28 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                   <h3>{previewTemplate.meta.name} Panorama Preview</h3>
                   <p>{previewTemplate.meta.subtitle}</p>
                 </div>
-                <button
-                  type="button"
-                  className="icon-btn"
-                  onClick={() => setPreviewTemplate(null)}
-                  aria-label="Close"
-                >
-                  <X size={16} />
-                </button>
+                <div className="template-inspect-head-actions">
+                  <button
+                    type="button"
+                    className="primary-btn template-apply-btn"
+                    onClick={() => {
+                      const id = previewTemplate.meta.id;
+                      setPreviewTemplate(null);
+                      void handleApply(id);
+                    }}
+                  >
+                    <ArrowRight size={14} />
+                    Use template
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => setPreviewTemplate(null)}
+                    aria-label="Close"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
               </div>
               <div className="template-inspect-scroll">
                 <div className="template-inspect-banner-box">
@@ -240,20 +270,22 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                 <div className="template-inspect-actions">
                   <button
                     type="button"
-                    className="text-btn"
+                    className="text-btn template-inspect-btn"
                     onClick={() => setPreviewTemplate(null)}
                   >
-                    Back
+                    Back to templates
                   </button>
                   <button
                     type="button"
-                    className="primary-btn"
+                    className="primary-btn template-apply-btn"
                     onClick={() => {
+                      const id = previewTemplate.meta.id;
                       setPreviewTemplate(null);
-                      void handleApply(previewTemplate.meta.id);
+                      void handleApply(id);
                     }}
                   >
-                    Apply {previewTemplate.meta.name}
+                    <ArrowRight size={14} />
+                    Use template (10 Slides)
                   </button>
                 </div>
               </div>
