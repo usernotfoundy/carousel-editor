@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Check, Sparkles, X, ArrowRight, Layers, LayoutTemplate, Eye } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 import { CAROUSEL_TEMPLATES, type TemplateCategory, type CarouselTemplate } from '../../utils/template';
@@ -8,6 +8,37 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory>('All');
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<CarouselTemplate | null>(null);
+  const [closing, setClosing] = useState(false);
+  const [inspectClosing, setInspectClosing] = useState(false);
+
+  const handleClose = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(onClose, 180);
+  };
+
+  const handleCloseInspect = () => {
+    if (inspectClosing) return;
+    setInspectClosing(true);
+    setTimeout(() => {
+      setPreviewTemplate(null);
+      setInspectClosing(false);
+    }, 180);
+  };
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (previewTemplate) {
+          handleCloseInspect();
+        } else {
+          handleClose();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [previewTemplate, closing, inspectClosing]);
 
   const categories: TemplateCategory[] = [
     'All',
@@ -26,7 +57,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
     setApplyingId(templateId);
     try {
       await applyTemplate(templateId);
-      onClose();
+      handleClose();
     } finally {
       setApplyingId(null);
     }
@@ -35,9 +66,9 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
   const hasContent = doc.elements.length > 0;
 
   return (
-    <div className="scrim" onMouseDown={onClose} role="presentation">
+    <div className={`scrim ${closing ? 'closing' : ''}`} onMouseDown={handleClose} role="presentation">
       <div
-        className="modal wide templates-modal"
+        className={`modal wide templates-modal ${closing ? 'closing' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label="Carousel Templates"
@@ -58,7 +89,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
               </p>
             </div>
           </div>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
+          <button type="button" className="icon-btn" onClick={handleClose} aria-label="Close">
             <X size={18} />
           </button>
         </header>
@@ -203,15 +234,15 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
           <span className="templates-foot-hint">
             Tip: All images, typography, and frame shapes can be customized after loading.
           </span>
-          <button type="button" className="text-btn" onClick={onClose}>
+          <button type="button" className="text-btn" onClick={handleClose}>
             Close
           </button>
         </footer>
 
         {/* Detailed Layout Inspection Dialog */}
         {previewTemplate && (
-          <div className="template-inspect-overlay" onClick={() => setPreviewTemplate(null)}>
-            <div className="template-inspect-card" onClick={(e) => e.stopPropagation()}>
+          <div className={`template-inspect-overlay ${inspectClosing ? 'closing' : ''}`} onClick={handleCloseInspect}>
+            <div className={`template-inspect-card ${inspectClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
               <div className="template-inspect-head">
                 <div>
                   <h3>{previewTemplate.meta.name} Panorama Preview</h3>
@@ -233,7 +264,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                   <button
                     type="button"
                     className="icon-btn"
-                    onClick={() => setPreviewTemplate(null)}
+                    onClick={handleCloseInspect}
                     aria-label="Close"
                   >
                     <X size={16} />
@@ -271,7 +302,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                   <button
                     type="button"
                     className="text-btn template-inspect-btn"
-                    onClick={() => setPreviewTemplate(null)}
+                    onClick={handleCloseInspect}
                   >
                     Back to templates
                   </button>

@@ -1,17 +1,35 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ToastMessage } from '../../context/EditorContext';
 
 export function Toast({ toast, onDismiss }: { toast: ToastMessage | null; onDismiss: () => void }) {
-  useEffect(() => {
-    if (!toast) return;
-    const handle = window.setTimeout(onDismiss, 4600);
-    return () => window.clearTimeout(handle);
-  }, [onDismiss, toast]);
+  const [activeToast, setActiveToast] = useState<ToastMessage | null>(toast);
+  const [closing, setClosing] = useState(false);
 
-  if (!toast) return null;
+  useEffect(() => {
+    if (toast) {
+      setActiveToast(toast);
+      setClosing(false);
+      const timer = window.setTimeout(() => {
+        setClosing(true);
+        window.setTimeout(onDismiss, 200);
+      }, 4200);
+      return () => window.clearTimeout(timer);
+    } else {
+      if (activeToast && !closing) {
+        setClosing(true);
+        const timer = window.setTimeout(() => {
+          setActiveToast(null);
+          setClosing(false);
+        }, 200);
+        return () => window.clearTimeout(timer);
+      }
+    }
+  }, [toast, onDismiss, activeToast, closing]);
+
+  if (!activeToast) return null;
   return (
-    <div className={`toast ${toast.tone}`} role="status">
-      {toast.message}
+    <div className={`toast ${activeToast.tone} ${closing ? 'closing' : ''}`} role="status">
+      {activeToast.message}
     </div>
   );
 }

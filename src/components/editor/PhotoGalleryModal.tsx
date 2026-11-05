@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, ImagePlus, Images, Upload, X } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 import type { ImageElement } from '../../types/editor';
@@ -14,6 +14,21 @@ export function PhotoGalleryModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  const handleClose = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(onClose, 180);
+  };
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [closing]);
 
   const assetList = Object.values(assets).filter((a) => !!a.image);
 
@@ -23,7 +38,7 @@ export function PhotoGalleryModal({
     setLoading(true);
     try {
       await replaceImageElement(element.id, file);
-      onClose();
+      handleClose();
     } finally {
       setLoading(false);
     }
@@ -31,13 +46,13 @@ export function PhotoGalleryModal({
 
   const handleSelectAsset = (assetId: string) => {
     replaceImageWithAsset(element.id, assetId);
-    onClose();
+    handleClose();
   };
 
   return (
-    <div className="scrim" onMouseDown={onClose} role="presentation">
+    <div className={`scrim ${closing ? 'closing' : ''}`} onMouseDown={handleClose} role="presentation">
       <div
-        className="modal wide photo-gallery-modal"
+        className={`modal wide photo-gallery-modal ${closing ? 'closing' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label="Choose Photo"
@@ -55,7 +70,7 @@ export function PhotoGalleryModal({
               </p>
             </div>
           </div>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
+          <button type="button" className="icon-btn" onClick={handleClose} aria-label="Close">
             <X size={18} />
           </button>
         </header>
@@ -130,7 +145,7 @@ export function PhotoGalleryModal({
 
         <footer className="modal-foot">
           <span className="modal-foot-hint">Supports JPG, PNG, and WebP up to 25 MB</span>
-          <button type="button" className="text-btn" onClick={onClose}>
+          <button type="button" className="text-btn" onClick={handleClose}>
             Cancel
           </button>
         </footer>

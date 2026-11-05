@@ -40,26 +40,34 @@ export function CarouselPreview({ initialIndex, onClose }: { initialIndex: numbe
     };
   }, [assets, doc]);
 
+  const [closing, setClosing] = useState(false);
+
+  const handleClose = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(onClose, 180);
+  };
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') handleClose();
       if (event.key === 'ArrowRight') setIndex((current) => Math.min(doc.canvas.slideCount - 1, current + 1));
       if (event.key === 'ArrowLeft') setIndex((current) => Math.max(0, current - 1));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [doc.canvas.slideCount, onClose]);
+  }, [doc.canvas.slideCount, closing]);
 
   const go = (next: number) => setIndex(Math.min(doc.canvas.slideCount - 1, Math.max(0, next)));
 
   return (
-    <div className="preview" role="dialog" aria-modal="true" aria-label="Carousel preview">
+    <div className={`preview ${closing ? 'closing' : ''}`} role="dialog" aria-modal="true" aria-label="Carousel preview">
       <header>
         <div>
           <strong>Preview</strong>
           <p>Each frame is one exported slide. Swipe to see the design continue.</p>
         </div>
-        <button type="button" className="icon-btn" aria-label="Close preview" onClick={onClose}>
+        <button type="button" className="icon-btn" aria-label="Close preview" onClick={handleClose}>
           <X size={18} />
         </button>
       </header>

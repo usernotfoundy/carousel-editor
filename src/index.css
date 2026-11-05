@@ -12,6 +12,13 @@
   --danger: #f07178;
   --workspace: #0b0c10;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  /* Motion tokens (Emil Kowalski curve & timing specifications) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 140ms;
+  --dur-normal: 220ms;
+  --dur-modal: 260ms;
   font-family: Outfit, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -148,6 +155,22 @@ button {
   border: 1px solid transparent;
   background: transparent;
   color: var(--text);
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+  user-select: none;
+}
+
+.icon-btn:active,
+.text-btn:active,
+.primary-btn:active,
+.tool-btn:active,
+.segment button:active,
+.slide-picks button:active {
+  transform: scale(0.96);
 }
 
 .icon-btn {
@@ -198,6 +221,7 @@ button {
 
 .primary-btn:hover {
   filter: brightness(1.05);
+  box-shadow: 0 2px 8px rgba(224, 181, 106, 0.25);
 }
 
 .save-state {
@@ -624,7 +648,32 @@ input[type="range"] {
   inset: 0;
   z-index: 60;
   border: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: scrim-fade-in 220ms var(--ease-out) forwards;
+}
+
+.scrim.closing {
+  animation: scrim-fade-out 180ms var(--ease-out) forwards;
+}
+
+@keyframes scrim-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scrim-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 .modal {
@@ -638,6 +687,34 @@ input[type="range"] {
   border: 1px solid var(--line);
   border-radius: 14px;
   box-shadow: var(--shadow);
+  transform-origin: center;
+  animation: modal-scale-in 240ms var(--ease-out) forwards;
+}
+
+.modal.closing {
+  animation: modal-scale-out 180ms var(--ease-out) forwards;
+}
+
+@keyframes modal-scale-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes modal-scale-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
 }
 
 .modal.wide {
@@ -754,11 +831,38 @@ input[type="range"] {
   bottom: 56px;
   transform: translateX(-50%);
   max-width: min(520px, calc(100% - 32px));
-  padding: 10px 14px;
+  padding: 10px 16px;
   border-radius: 10px;
   background: #2a303a;
   border: 1px solid var(--line);
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  animation: toast-enter 240ms var(--ease-out) forwards;
+}
+
+.toast.closing {
+  animation: toast-exit 190ms var(--ease-out) forwards;
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes toast-exit {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.98);
+  }
 }
 
 .toast.error {
@@ -772,6 +876,33 @@ input[type="range"] {
   background: #07080b;
   display: flex;
   flex-direction: column;
+  animation: preview-enter 220ms var(--ease-out) forwards;
+}
+
+.preview.closing {
+  animation: preview-exit 180ms var(--ease-out) forwards;
+}
+
+@keyframes preview-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes preview-exit {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.99);
+  }
 }
 
 .preview header p {
@@ -1186,7 +1317,7 @@ input[type="range"] {
   pointer-events: auto;
   user-select: none;
   white-space: nowrap;
-  animation: quick-controls-pop 140ms ease-out;
+  animation: quick-controls-pop 160ms var(--ease-out);
 }
 
 .quick-controls.is-locked {
@@ -1217,11 +1348,15 @@ input[type="range"] {
   color: var(--text);
   font-size: 12px;
   font-weight: 500;
-  transition: background 120ms, color 120ms, border-color 120ms;
+  transition: transform 120ms var(--ease-out), background 120ms, color 120ms, border-color 120ms;
 }
 
 .quick-btn:hover {
   background: var(--panel-2);
+}
+
+.quick-btn:active {
+  transform: scale(0.92);
 }
 
 .quick-btn.locked {
@@ -1785,13 +1920,19 @@ input[type="range"] {
 .template-inspect-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 80;
   background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
+  animation: scrim-fade-in 200ms var(--ease-out) forwards;
+}
+
+.template-inspect-overlay.closing {
+  animation: scrim-fade-out 180ms var(--ease-out) forwards;
 }
 
 .template-inspect-card {
@@ -1803,6 +1944,33 @@ input[type="range"] {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  animation: modal-card-in 230ms var(--ease-out) forwards;
+}
+
+.template-inspect-card.closing {
+  animation: modal-card-out 180ms var(--ease-out) forwards;
+}
+
+@keyframes modal-card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modal-card-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
 }
 
 .template-inspect-head {
@@ -1917,6 +2085,18 @@ input[type="range"] {
   z-index: 15;
   pointer-events: auto;
   transform-origin: center top;
+  animation: canvas-pill-in 160ms var(--ease-out);
+}
+
+@keyframes canvas-pill-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .canvas-pill-btn {
@@ -1934,7 +2114,7 @@ input[type="range"] {
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 12px rgba(126, 182, 255, 0.25);
   backdrop-filter: blur(8px);
-  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  transition: transform 140ms var(--ease-out), background 140ms ease, box-shadow 140ms ease;
   white-space: nowrap;
 }
 
@@ -1943,6 +2123,10 @@ input[type="range"] {
   color: #0d121c;
   transform: translate(-50%, -2px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55), 0 0 16px rgba(126, 182, 255, 0.45);
+}
+
+.canvas-pill-btn:active {
+  transform: translate(-50%, 0) scale(0.95);
 }
 
 .quick-btn.replace-photo-btn {
@@ -2127,6 +2311,10 @@ input[type="range"] {
   z-index: 2;
 }
 
+.photo-gallery-thumb-btn:active {
+  transform: scale(0.97);
+}
+
 .photo-gallery-thumb-btn.is-current {
   border: 2px solid var(--accent);
   box-shadow: 0 0 12px rgba(126, 182, 255, 0.35);
@@ -2213,6 +2401,34 @@ input[type="range"] {
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: #141720 !important;
     box-shadow: none !important;
+    animation: modal-mobile-enter 260ms var(--ease-drawer) forwards !important;
+  }
+
+  .modal.templates-modal.closing,
+  .modal.photo-gallery-modal.closing {
+    animation: modal-mobile-exit 180ms var(--ease-out) forwards !important;
+  }
+
+  @keyframes modal-mobile-enter {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes modal-mobile-exit {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(16px);
+    }
   }
 
   /* Header adjustments */
@@ -2496,5 +2712,19 @@ input[type="range"] {
     padding: 8px 16px !important;
     font-size: 13px !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+  }
+}
+
+/* -------------------------------------------------------------
+   ACCESSIBILITY: REDUCED MOTION PREFERENCES
+   ------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
