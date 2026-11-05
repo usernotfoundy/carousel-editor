@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, Sparkles, X, ArrowRight, Layers, LayoutTemplate } from 'lucide-react';
+import { Check, Sparkles, X, ArrowRight, Layers, LayoutTemplate, Eye } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 import { CAROUSEL_TEMPLATES, type TemplateCategory, type CarouselTemplate } from '../../utils/template';
 
@@ -91,26 +91,44 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
             return (
               <div key={template.meta.id} className="template-card">
                 {/* Panorama strip preview */}
-                <div
-                  className="template-preview-wrap"
-                  onClick={() => setPreviewTemplate(template)}
-                  title="Click to inspect panoramic layout"
-                >
-                  <img
-                    src={template.meta.bannerUrl}
-                    alt={template.meta.name}
-                    className="template-strip-img"
-                    loading="lazy"
-                  />
-                  {/* Visual slide guide lines (10 segments) */}
-                  <div className="template-slide-guides" aria-hidden="true">
-                    {Array.from({ length: 10 }).map((_, i) => (
-                      <div key={i} className="template-guide-seg">
-                        <span className="template-guide-num">{i + 1}</span>
-                      </div>
-                    ))}
+                <div className="template-preview-container">
+                  <div className="template-preview-top-bar">
+                    <span className="template-preview-badge">10 Slides • 4:5 Portrait</span>
+                    <button
+                      type="button"
+                      className="template-inspect-chip"
+                      onClick={() => setPreviewTemplate(template)}
+                      title="Inspect full panorama"
+                    >
+                      <Eye size={12} />
+                      Inspect
+                    </button>
                   </div>
-                  <div className="template-preview-badge">10 Seamless Slides</div>
+                  <div
+                    className="template-preview-wrap"
+                    onClick={() => setPreviewTemplate(template)}
+                    title="Click or swipe to inspect all 10 slides"
+                  >
+                    <div className="template-preview-track">
+                      <img
+                        src={template.meta.bannerUrl}
+                        alt={template.meta.name}
+                        className="template-strip-img"
+                        loading="lazy"
+                      />
+                      {/* Visual slide guide lines (10 segments) */}
+                      <div className="template-slide-guides" aria-hidden="true">
+                        {Array.from({ length: 10 }).map((_, i) => (
+                          <div key={i} className="template-guide-seg">
+                            <span className="template-guide-num">{i + 1}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="template-swipe-notice" aria-hidden="true">
+                    <span>Swipe horizontally to view all 10 slides →</span>
+                  </div>
                 </div>
 
                 {/* Card body */}
