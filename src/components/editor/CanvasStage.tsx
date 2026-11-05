@@ -65,6 +65,7 @@ export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onT
     addImageFiles,
     syncTextHeights,
     openGallery,
+    galleryTarget,
   } = useEditor();
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -525,7 +526,7 @@ export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onT
             </button>
           );
         })}
-        {selected && (
+        {selected && !galleryTarget && (
           <QuickControls
             element={selected}
             zoom={viewport.zoom}
@@ -534,7 +535,7 @@ export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onT
             onOpenGallery={selected.type === 'image' ? () => openGallery(selected) : undefined}
           />
         )}
-        {selected && selected.type === 'image' && !selected.locked && (
+        {selected && selected.type === 'image' && !selected.locked && !galleryTarget && (
           <div
             className="canvas-image-action-pill"
             style={{
