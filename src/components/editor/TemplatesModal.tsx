@@ -149,7 +149,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                 {/* Card body */}
                 <div className="template-card-body">
                   <div className="template-meta-row">
-                    <div>
+                    <div className="template-title-block">
                       <h3 className="template-name">{template.meta.name}</h3>
                       <p className="template-sub">{template.meta.subtitle}</p>
                     </div>

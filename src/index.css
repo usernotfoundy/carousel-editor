@@ -1633,18 +1633,28 @@ input[type="range"] {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 2px;
+}
+
+.template-title-block {
+  flex: 1;
+  min-width: 0;
 }
 
 .template-name {
-  margin: 0;
-  font-size: 16px;
+  margin: 0 0 6px 0;
+  font-size: 17px;
   font-weight: 600;
+  line-height: 1.35;
   color: #fff;
+  letter-spacing: -0.01em;
+  word-break: break-word;
 }
 
 .template-sub {
-  margin: 2px 0 0;
-  font-size: 12px;
+  margin: 0 0 4px 0;
+  font-size: 12.5px;
+  line-height: 1.4;
   color: #9ea7b7;
 }
 
@@ -2297,11 +2307,15 @@ input[type="range"] {
   }
 
   .template-name {
-    font-size: 15px !important;
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+    margin-bottom: 5px !important;
   }
 
   .template-sub {
-    font-size: 11px !important;
+    font-size: 11.5px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 4px !important;
   }
 
   .template-category-pill {
