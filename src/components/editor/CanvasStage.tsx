@@ -13,10 +13,12 @@ import {
   Text as KonvaText,
   Transformer,
 } from 'react-konva';
+import { Lock } from 'lucide-react';
 import type { EditorElement } from '../../types/editor';
 import type { useViewport } from '../../hooks/useViewport';
 import { useEditor } from '../../context/EditorContext';
 import { totalWidth } from '../../utils/formats';
+import { QuickControls } from './QuickControls';
 import {
   MISSING_IMAGE_FILL,
   backgroundImageConfig,
@@ -416,6 +418,7 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
                       key={element.id}
                       element={element}
                       image={element.type === 'image' ? assets[element.imageId]?.image : undefined}
+                      isSelected={selectedId === element.id}
                       spacePressed={spacePressed}
                       onSelect={() => select(element.id)}
                       onEdit={() => {
@@ -460,12 +463,12 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
                   rotateEnabled={!selected?.locked}
                   resizeEnabled={!selected?.locked}
                   flipEnabled={false}
-                  borderStroke="#7eb6ff"
-                  borderStrokeWidth={resizerConfig.borderStrokeWidth}
+                  borderStroke={selected?.locked ? '#f07178' : '#7eb6ff'}
+                  borderDash={selected?.locked ? [4, 4] : undefined}
                   anchorFill="#ffffff"
-                  anchorStroke="#6ea2e8"
+                  anchorStroke={selected?.locked ? '#f07178' : '#6ea2e8'}
                   anchorStrokeWidth={resizerConfig.anchorStrokeWidth}
-                  anchorSize={resizerConfig.anchorSize}
+                  anchorSize={selected?.locked ? 0 : resizerConfig.anchorSize}
                   anchorCornerRadius={resizerConfig.anchorCornerRadius}
                   rotateAnchorOffset={resizerConfig.rotateAnchorOffset}
                   keepRatio={
@@ -501,6 +504,34 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
             {index + 1}
           </div>
         ))}
+        {doc.elements.map((el) => {
+          if (!el.locked || !el.visible) return null;
+          return (
+            <button
+              key={`lock-${el.id}`}
+              type="button"
+              className="canvas-lock-indicator"
+              style={{
+                transform: `translate(${viewport.pan.x + (el.x + el.width) * viewport.zoom - 24}px, ${viewport.pan.y + el.y * viewport.zoom + 4}px)`,
+              }}
+              title={`${el.name} is locked (click to select and unlock)`}
+              onClick={(e) => {
+                e.stopPropagation();
+                select(el.id);
+              }}
+            >
+              <Lock size={12} />
+            </button>
+          );
+        })}
+        {selected && (
+          <QuickControls
+            element={selected}
+            zoom={viewport.zoom}
+            pan={viewport.pan}
+            stageSize={viewport.size}
+          />
+        )}
         {dragOver && <div className="drop-overlay">Drop images onto the continuous canvas</div>}
         {doc.elements.length === 0 && (
           <div className="empty-hint">
@@ -527,6 +558,7 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
 function DesignNode({
   element,
   image,
+  isSelected,
   spacePressed,
   onSelect,
   onEdit,
@@ -535,30 +567,33 @@ function DesignNode({
 }: {
   element: EditorElement;
   image?: CanvasImageSource;
+  isSelected: boolean;
   spacePressed: boolean;
   onSelect: () => void;
   onEdit: () => void;
   onLive: (patch: { x?: number; y?: number; width?: number; height?: number; rotation?: number }) => void;
   onCommit: (patch: { x: number; y: number; width?: number; height?: number; rotation?: number }) => void;
 }) {
-  const draggable = !element.locked && !spacePressed;
+  const isInteractive = !element.locked || isSelected;
+  const draggable = isSelected && !element.locked && !spacePressed;
   const handlers = {
     name: 'element',
     id: element.id,
+    listening: isInteractive,
     draggable,
     onMouseDown: (event: KonvaEventObject<MouseEvent>) => {
-      if (spacePressed || event.evt.button === 1) return;
+      if (spacePressed || event.evt.button === 1 || !isInteractive) return;
       event.cancelBubble = true;
       onSelect();
     },
     onTouchStart: (event: KonvaEventObject<TouchEvent>) => {
-      if (spacePressed) return;
+      if (spacePressed || !isInteractive) return;
       event.cancelBubble = true;
       onSelect();
     },
     onMouseEnter: (event: KonvaEventObject<MouseEvent>) => {
       const stage = event.target.getStage();
-      if (stage) stage.container().style.cursor = element.locked || spacePressed ? 'grab' : 'move';
+      if (stage) stage.container().style.cursor = element.locked || spacePressed ? 'grab' : isSelected ? 'move' : 'pointer';
     },
     onMouseLeave: (event: KonvaEventObject<MouseEvent>) => {
       const stage = event.target.getStage();
@@ -597,10 +632,12 @@ function DesignNode({
         {...textConfig(element)}
         {...handlers}
         onDblClick={(event) => {
+          if (element.locked) return;
           event.cancelBubble = true;
           onEdit();
         }}
         onDblTap={(event) => {
+          if (element.locked) return;
           event.cancelBubble = true;
           onEdit();
         }}

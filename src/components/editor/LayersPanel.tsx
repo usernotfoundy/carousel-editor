@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Circle, Eye, EyeOff, GripVertical, Image as ImageIcon, Square, Trash2, Type } from 'lucide-react';
+import { ChevronDown, ChevronUp, Circle, Eye, EyeOff, GripVertical, Image as ImageIcon, Lock, Square, Trash2, Type, Unlock } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 import type { EditorElement } from '../../types/editor';
 
@@ -11,7 +11,7 @@ function LayerIcon({ element }: { element: EditorElement }) {
 }
 
 export function LayersPanel() {
-  const { document: doc, selectedId, select, deleteElement, toggleVisible, reorderLayer, moveLayer } = useEditor();
+  const { document: doc, selectedId, select, deleteElement, toggleVisible, reorderLayer, moveLayer, patchElement } = useEditor();
   const [dragId, setDragId] = useState<string | null>(null);
   const layers = [...doc.elements].reverse();
 
@@ -73,6 +73,15 @@ export function LayersPanel() {
                   onClick={() => moveLayer(element.id, 'backward')}
                 >
                   <ChevronDown size={14} />
+                </button>
+                <button
+                  type="button"
+                  className={`icon-btn ${element.locked ? 'active-lock' : ''}`}
+                  aria-label={element.locked ? 'Unlock layer' : 'Lock layer'}
+                  title={element.locked ? 'Unlock layer' : 'Lock layer'}
+                  onClick={() => patchElement(element.id, { locked: !element.locked })}
+                >
+                  {element.locked ? <Lock size={14} /> : <Unlock size={14} />}
                 </button>
                 <button
                   type="button"
