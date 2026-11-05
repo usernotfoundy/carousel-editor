@@ -13,7 +13,7 @@ import {
   Text as KonvaText,
   Transformer,
 } from 'react-konva';
-import { Lock } from 'lucide-react';
+import { ImagePlus, LayoutTemplate, Lock } from 'lucide-react';
 import type { EditorElement } from '../../types/editor';
 import type { useViewport } from '../../hooks/useViewport';
 import { useEditor } from '../../context/EditorContext';
@@ -54,7 +54,7 @@ function readBox(node: Konva.Node, element: EditorElement) {
   return { x: node.x(), y: node.y(), width, height, rotation: node.rotation() };
 }
 
-export function CanvasStage({ viewport }: { viewport: Viewport }) {
+export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onTemplates?: () => void }) {
   const {
     document: doc,
     assets,
@@ -64,6 +64,7 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
     setTransient,
     addImageFiles,
     syncTextHeights,
+    openGallery,
   } = useEditor();
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -426,6 +427,7 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
                         onEdit={() => {
                           select(element.id);
                           if (element.type === 'text' && !element.locked) setEditingId(element.id);
+                          if (element.type === 'image' && !element.locked) openGallery(element);
                         }}
                         onLive={(patch) => setTransient({ id: element.id, patch })}
                         onCommit={(patch) => {
@@ -529,12 +531,37 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
             zoom={viewport.zoom}
             pan={viewport.pan}
             stageSize={viewport.size}
+            onOpenGallery={selected.type === 'image' ? () => openGallery(selected) : undefined}
           />
+        )}
+        {selected && selected.type === 'image' && !selected.locked && (
+          <div
+            className="canvas-image-action-pill"
+            style={{
+              transform: `translate(${viewport.pan.x + (selected.x + selected.width / 2) * viewport.zoom}px, ${viewport.pan.y + selected.y * viewport.zoom + 12}px)`,
+            }}
+          >
+            <button
+              type="button"
+              className="canvas-pill-btn"
+              onClick={() => openGallery(selected)}
+              title="Replace with your photo from gallery or device"
+            >
+              <ImagePlus size={13} />
+              Replace Photo
+            </button>
+          </div>
         )}
         {dragOver && <div className="drop-overlay">Drop images onto the continuous canvas</div>}
         {doc.elements.length === 0 && (
           <div className="empty-hint">
-            Add an image or text. Anything you place can cross the guides — export cuts this one canvas into slides.
+            <p>Add an image or text. Anything you place can cross the guides — export cuts this one canvas into slides.</p>
+            {onTemplates && (
+              <button type="button" className="primary-btn empty-templates-btn" onClick={onTemplates}>
+                <LayoutTemplate size={14} />
+                Browse Templates
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -619,11 +646,24 @@ function DesignNode({
     },
   };
 
+  const dblHandlers = {
+    onDblClick: (event: KonvaEventObject<MouseEvent>) => {
+      if (element.locked) return;
+      event.cancelBubble = true;
+      onEdit();
+    },
+    onDblTap: (event: KonvaEventObject<TouchEvent>) => {
+      if (element.locked) return;
+      event.cancelBubble = true;
+      onEdit();
+    },
+  };
+
   if (element.type === 'image' && image) {
-    return <KonvaImage {...imageConfig(element, image)} {...handlers} />;
+    return <KonvaImage {...imageConfig(element, image)} {...handlers} {...dblHandlers} />;
   }
   if (element.type === 'image') {
-    return <Rect {...handlers} x={element.x} y={element.y} width={element.width} height={element.height} rotation={element.rotation} opacity={element.opacity} fill={MISSING_IMAGE_FILL} />;
+    return <Rect {...handlers} {...dblHandlers} x={element.x} y={element.y} width={element.width} height={element.height} rotation={element.rotation} opacity={element.opacity} fill={MISSING_IMAGE_FILL} />;
   }
   if (element.type === 'text') {
     return (

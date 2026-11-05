@@ -1,5 +1,7 @@
 import type { EditorDocument, EditorElement } from '../types/editor';
 import { idbGet, idbPut } from './storage';
+export { CAROUSEL_TEMPLATES, getTemplates, getTemplateById, loadTemplateAssets } from './templateDefinitions';
+export type { CarouselTemplate, TemplateCategory, TemplateMeta } from '../types/template';
 
 export const TEMPLATE_IMAGE_ID = 'template-hero-v1';
 

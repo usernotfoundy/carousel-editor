@@ -1,14 +1,16 @@
-import { Download, Eye, FilePlus2, Redo2, Undo2 } from 'lucide-react';
+import { Download, Eye, FilePlus2, LayoutTemplate, Redo2, Undo2 } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 
 export function TopBar({
   onPreview,
   onExport,
   onNew,
+  onTemplates,
 }: {
   onPreview: () => void;
   onExport: () => void;
   onNew: () => void;
+  onTemplates: () => void;
 }) {
   const { undo, redo, canUndo, canRedo, saveState } = useEditor();
 
@@ -30,6 +32,10 @@ export function TopBar({
         </span>
       </div>
       <div className="top-actions">
+        <button type="button" className="text-btn" onClick={onTemplates}>
+          <LayoutTemplate size={15} />
+          <span className="btn-label">Templates</span>
+        </button>
         <button type="button" className="text-btn" onClick={onNew}>
           <FilePlus2 size={15} />
           <span className="btn-label">New</span>

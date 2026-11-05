@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  ImagePlus,
   Lock,
   Trash2,
   Unlock,
@@ -16,9 +17,10 @@ interface QuickControlsProps {
   zoom: number;
   pan: { x: number; y: number };
   stageSize: { w: number; h: number };
+  onOpenGallery?: () => void;
 }
 
-export function QuickControls({ element, zoom, pan, stageSize }: QuickControlsProps) {
+export function QuickControls({ element, zoom, pan, stageSize, onOpenGallery }: QuickControlsProps) {
   const { document: doc, patchElement, moveLayer, nudge, duplicateSelected, deleteSelected } = useEditor();
 
   const elementIndex = doc.elements.findIndex((item) => item.id === element.id);
@@ -51,6 +53,23 @@ export function QuickControls({ element, zoom, pan, stageSize }: QuickControlsPr
       role="toolbar"
       aria-label="Focused element controls"
     >
+      {/* 0. Replace Photo Component (for image elements) */}
+      {element.type === 'image' && onOpenGallery && (
+        <>
+          <button
+            type="button"
+            className="quick-btn replace-photo-btn highlight"
+            onClick={onOpenGallery}
+            aria-label="Replace photo"
+            title="Choose from photo gallery or upload a new photo"
+          >
+            <ImagePlus size={14} />
+            <span>Replace Photo</span>
+          </button>
+          <span className="quick-divider" aria-hidden="true" />
+        </>
+      )}
+
       {/* 1. Lock / Unlock Component */}
       <button
         type="button"

@@ -15,6 +15,8 @@ import { TopBar } from './TopBar';
 import { MobileDock } from './MobileDock';
 import { SplashScreen } from './SplashScreen';
 import { CarouselPreview } from '../preview/CarouselPreview';
+import { TemplatesModal } from './TemplatesModal';
+import { PhotoGalleryModal } from './PhotoGalleryModal';
 
 const SPLASH_HOLD_MS = 2300;
 const SPLASH_FADE_MS = 480;
@@ -25,6 +27,7 @@ export function Editor() {
   const [preview, setPreview] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [panel, setPanel] = useState<'layers' | 'properties' | null>(null);
   const [splash, setSplash] = useState<'hold' | 'leave' | 'done'>('hold');
   const [openedAt] = useState(() => performance.now());
@@ -60,7 +63,7 @@ export function Editor() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (preview || exporting || confirmNew || isTypingTarget(event.target)) return;
+      if (preview || exporting || confirmNew || templatesOpen || editor.galleryTarget || isTypingTarget(event.target)) return;
       const meta = event.metaKey || event.ctrlKey;
       if (meta && event.code === 'KeyZ' && !event.shiftKey) {
         event.preventDefault();
@@ -133,12 +136,13 @@ export function Editor() {
         onPreview={() => setPreview(true)}
         onExport={() => setExporting(true)}
         onNew={() => setConfirmNew(true)}
+        onTemplates={() => setTemplatesOpen(true)}
       />
       <aside className={`sidebar ${panel === 'layers' ? 'open' : ''}`}>
-        <Toolbar />
+        <Toolbar onTemplates={() => setTemplatesOpen(true)} />
         <LayersPanel />
       </aside>
-      <CanvasStage viewport={viewport} />
+      <CanvasStage viewport={viewport} onTemplates={() => setTemplatesOpen(true)} />
       <div className={panel === 'properties' ? 'inspector-slot open' : 'inspector-slot'}>
         <PropertiesPanel />
       </div>
@@ -152,18 +156,34 @@ export function Editor() {
           setPanel(null);
           setPreview(true);
         }}
+        onTemplates={() => {
+          setPanel(null);
+          setTemplatesOpen(true);
+        }}
       />
       {panel && <button type="button" className="scrim mobile-only" aria-label="Close panel" onClick={() => setPanel(null)} />}
       <Toast toast={editor.toast} onDismiss={editor.dismissToast} />
+      {templatesOpen && <TemplatesModal onClose={() => setTemplatesOpen(false)} />}
+      {editor.galleryTarget && <PhotoGalleryModal element={editor.galleryTarget} onClose={editor.closeGallery} />}
       {preview && <CarouselPreview initialIndex={viewport.activeSlide} onClose={() => setPreview(false)} />}
       {exporting && <ExportDialog onClose={() => setExporting(false)} />}
       {confirmNew && (
         <Modal title="Start a new project?" onClose={() => setConfirmNew(false)}>
           <div className="export-body">
-            <p>This replaces the canvas saved in this browser.</p>
-            <div className="action-row">
+            <p>Choose how you would like to start. This replaces the canvas saved in this browser.</p>
+            <div className="action-row" style={{ flexWrap: 'wrap', gap: 8 }}>
               <button type="button" className="text-btn" onClick={() => setConfirmNew(false)}>
                 Cancel
+              </button>
+              <button
+                type="button"
+                className="text-btn secondary"
+                onClick={() => {
+                  setConfirmNew(false);
+                  setTemplatesOpen(true);
+                }}
+              >
+                Choose a Template
               </button>
               <button
                 type="button"
@@ -173,7 +193,7 @@ export function Editor() {
                   setConfirmNew(false);
                 }}
               >
-                New project
+                Blank canvas
               </button>
             </div>
           </div>

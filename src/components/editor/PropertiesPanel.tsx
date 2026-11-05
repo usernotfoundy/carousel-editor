@@ -8,6 +8,7 @@ import {
   ChevronsDown,
   ChevronsUp,
   Copy,
+  ImagePlus,
   Lock,
   Trash2,
   Unlock,
@@ -232,15 +233,25 @@ export function PropertiesPanel() {
           />
         </Field>
         {live.type === 'image' && (
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={live.lockAspect}
-              onChange={(event) => editor.patchElement(live.id, { lockAspect: event.target.checked })}
-            />
-            Lock aspect ratio
-            <span className="muted">Hold Shift while resizing to free the ratio.</span>
-          </label>
+          <div className="inspector-photo-actions">
+            <button
+              type="button"
+              className="primary-btn replace-photo-prop-btn"
+              onClick={() => editor.openGallery(live)}
+            >
+              <ImagePlus size={15} />
+              Replace Photo / Gallery
+            </button>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={live.lockAspect}
+                onChange={(event) => editor.patchElement(live.id, { lockAspect: event.target.checked })}
+              />
+              Lock aspect ratio
+              <span className="muted">Hold Shift while resizing to free the ratio.</span>
+            </label>
+          </div>
         )}
         {live.type === 'text' && (
           <>

@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
-import { Circle, ImagePlus, Square, Type } from 'lucide-react';
+import { Circle, ImagePlus, LayoutTemplate, Square, Type } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 
-export function Toolbar() {
+export function Toolbar({ onTemplates }: { onTemplates?: () => void }) {
   const { addImageFiles, addText, addShape, select } = useEditor();
   const inputRef = useRef<HTMLInputElement>(null);
   const [shapesOpen, setShapesOpen] = useState(false);
@@ -10,6 +10,12 @@ export function Toolbar() {
   return (
     <div className="tools">
       <p className="panel-label">Add</p>
+      {onTemplates && (
+        <button type="button" className="tool-btn highlight" onClick={onTemplates}>
+          <LayoutTemplate size={16} />
+          Templates
+        </button>
+      )}
       <button type="button" className="tool-btn" onClick={() => inputRef.current?.click()}>
         <ImagePlus size={16} />
         Image

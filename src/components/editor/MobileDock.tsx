@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Circle, Expand, Eye, ImagePlus, Layers, Minus, Plus, SlidersHorizontal, Square, Type } from 'lucide-react';
+import { Circle, Expand, Eye, ImagePlus, Layers, LayoutTemplate, Minus, Plus, SlidersHorizontal, Square, Type } from 'lucide-react';
 import type { useViewport } from '../../hooks/useViewport';
 import { useEditor } from '../../context/EditorContext';
 
@@ -11,12 +11,14 @@ export function MobileDock({
   onToggleLayers,
   onToggleProperties,
   onPreview,
+  onTemplates,
 }: {
   viewport: Viewport;
   panel: 'layers' | 'properties' | null;
   onToggleLayers: () => void;
   onToggleProperties: () => void;
   onPreview: () => void;
+  onTemplates?: () => void;
 }) {
   const { document: doc, addImageFiles, addText, addShape } = useEditor();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +44,12 @@ export function MobileDock({
         </span>
       </div>
       <nav className="dock-nav" aria-label="Editor tools">
+        {onTemplates && (
+          <button type="button" onClick={onTemplates}>
+            <LayoutTemplate size={18} />
+            Templates
+          </button>
+        )}
         <button type="button" onClick={() => inputRef.current?.click()}>
           <ImagePlus size={18} />
           Image

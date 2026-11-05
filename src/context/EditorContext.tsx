@@ -25,7 +25,7 @@ import { applyPatch, duplicateElement, moveElements, reorderElements } from '../
 import { MAX_SLIDES, MIN_SLIDES, formatPreset, totalWidth } from '../utils/formats';
 import { assetFromBlob, prepareImageFile } from '../utils/image';
 import { collectImageIds, idbPut, loadAssets, readSavedDocument, writeDocument } from '../utils/storage';
-import { createBlankDocument, createTemplateDocument, ensureTemplateHero } from '../utils/template';
+import { createBlankDocument, createTemplateDocument, ensureTemplateHero, getTemplateById, loadTemplateAssets } from '../utils/template';
 
 export type ToastMessage = {
   id: number;
@@ -79,16 +79,22 @@ type EditorContextValue = {
   setSlideCount: (count: number) => void;
   setProjectName: (name: string) => void;
   addImageFiles: (files: File[]) => Promise<void>;
+  replaceImageElement: (elementId: string, file: File) => Promise<void>;
+  replaceImageWithAsset: (elementId: string, imageId: string) => void;
   addText: () => void;
   addShape: (shape: ShapeKind) => void;
   setBackgroundImage: (file: File) => Promise<void>;
   clearBackgroundImage: () => void;
   newProject: () => void;
+  applyTemplate: (templateId: string) => Promise<void>;
   syncTextHeights: (patches: { id: string; height: number }[]) => void;
   registerPlacement: (getPlacement: () => Placement) => void;
   setTransient: (value: Transient) => void;
   subscribeTransient: (listener: () => void) => () => void;
   getTransient: () => Transient;
+  galleryTarget: ImageElement | null;
+  openGallery: (element: ImageElement) => void;
+  closeGallery: () => void;
   notify: (message: string, tone?: ToastMessage['tone']) => void;
   dismissToast: () => void;
 };
@@ -135,6 +141,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [galleryTarget, setGalleryTarget] = useState<ImageElement | null>(null);
   const [transientStore] = useState(() => createTransientStore());
   const placementRef = useRef<() => Placement>(() => ({ cx: 540, cy: 480 }));
   const notify = useCallback((message: string, tone: ToastMessage['tone'] = 'info') => {
@@ -178,6 +185,14 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     setSelectedId(id);
     transientStore.set(null);
   }, [transientStore]);
+
+  const openGallery = useCallback((element: ImageElement) => {
+    setGalleryTarget(element);
+  }, []);
+
+  const closeGallery = useCallback(() => {
+    setGalleryTarget(null);
+  }, []);
 
   const patchElement = useCallback(
     (id: string, patch: ElementPatch, mode: 'commit' | 'preview' = 'commit') => {
@@ -355,6 +370,80 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     [history, notify, rememberAsset],
   );
 
+  const replaceImageElement = useCallback(
+    async (elementId: string, file: File) => {
+      try {
+        const prepared = await prepareImageFile(file);
+        const imageId = crypto.randomUUID();
+        await rememberAsset(imageId, prepared.blob);
+        const aspect = prepared.width / prepared.height;
+
+        history.commit((current) => ({
+          ...current,
+          elements: current.elements.map((element) => {
+            if (element.id !== elementId || element.type !== 'image') return element;
+            let width = element.width;
+            let height = element.height;
+            if (element.lockAspect) {
+              const currentAspect = width / height;
+              if (aspect > currentAspect) {
+                height = Math.round(width / aspect);
+              } else {
+                width = Math.round(height * aspect);
+              }
+            }
+            return {
+              ...element,
+              imageId,
+              name: (file.name.replace(/\.[^.]+$/, '') || element.name).slice(0, 80),
+              width: Math.max(8, width),
+              height: Math.max(8, height),
+              aspectRatio: aspect,
+            };
+          }),
+        }));
+        notify(`Replaced photo with ${file.name}.`);
+      } catch (error) {
+        notify(error instanceof Error ? error.message : 'Could not replace image.', 'error');
+      }
+    },
+    [history, notify, rememberAsset],
+  );
+
+  const replaceImageWithAsset = useCallback(
+    (elementId: string, imageId: string) => {
+      const asset = assets[imageId];
+      if (!asset) return;
+      const aspect = asset.width / asset.height;
+
+      history.commit((current) => ({
+        ...current,
+        elements: current.elements.map((element) => {
+          if (element.id !== elementId || element.type !== 'image') return element;
+          let width = element.width;
+          let height = element.height;
+          if (element.lockAspect) {
+            const currentAspect = width / height;
+            if (aspect > currentAspect) {
+              height = Math.round(width / aspect);
+            } else {
+              width = Math.round(height * aspect);
+            }
+          }
+          return {
+            ...element,
+            imageId,
+            width: Math.max(8, width),
+            height: Math.max(8, height),
+            aspectRatio: aspect,
+          };
+        }),
+      }));
+      notify('Updated photo from gallery.');
+    },
+    [assets, history, notify],
+  );
+
   const addText = useCallback(() => {
     const doc = history.presentRef.current;
     const { cx, cy } = placementRef.current();
@@ -436,6 +525,28 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     transientStore.set(null);
   }, [history, transientStore]);
 
+  const applyTemplate = useCallback(
+    async (templateId: string) => {
+      const template = getTemplateById(templateId);
+      if (!template) {
+        notify('Template not found.', 'error');
+        return;
+      }
+      try {
+        const templateAssets = await loadTemplateAssets(template);
+        setAssets((prev) => ({ ...prev, ...templateAssets }));
+        const doc = template.createDocument();
+        history.reset(doc);
+        setSelectedId(null);
+        transientStore.set(null);
+        notify(`Applied "${template.meta.name}" template (${template.meta.slideCount} slides).`);
+      } catch (error) {
+        notify(error instanceof Error ? error.message : 'Could not load template assets.', 'error');
+      }
+    },
+    [history, notify, transientStore],
+  );
+
   const syncTextHeights = useCallback(
     (patches: { id: string; height: number }[]) => {
       const current = history.presentRef.current;
@@ -486,16 +597,22 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       setSlideCount,
       setProjectName,
       addImageFiles,
+      replaceImageElement,
+      replaceImageWithAsset,
       addText,
       addShape,
       setBackgroundImage,
       clearBackgroundImage,
       newProject,
+      applyTemplate,
       syncTextHeights,
       registerPlacement,
       setTransient,
       subscribeTransient: transientStore.subscribe,
       getTransient: transientStore.get,
+      galleryTarget,
+      openGallery,
+      closeGallery,
       notify,
       dismissToast,
     }),
@@ -503,12 +620,16 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       addImageFiles,
       addShape,
       addText,
+      applyTemplate,
       assets,
       clearBackgroundImage,
       deleteElement,
       deleteSelected,
       dismissToast,
       duplicateSelected,
+      galleryTarget,
+      closeGallery,
+      openGallery,
       history.canRedo,
       history.canUndo,
       history.flushPending,
@@ -523,6 +644,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       ready,
       registerPlacement,
       reorderLayer,
+      replaceImageElement,
+      replaceImageWithAsset,
       saveState,
       select,
       selectedId,
