@@ -375,7 +375,7 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
           event.preventDefault();
           dragDepth.current = 0;
           setDragOver(false);
-          const files = [...event.dataTransfer.files];
+          const files = Array.from(event.dataTransfer.files);
           if (files.length) void addImageFiles(files);
         }}
       >
@@ -408,31 +408,44 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
           >
             <Layer>
               <Group x={viewport.pan.x} y={viewport.pan.y} scaleX={viewport.zoom} scaleY={viewport.zoom}>
-                <Rect name="canvas-bg" {...backgroundRectConfig(canvas)} />
-                {backgroundImage && (
-                  <KonvaImage name="canvas-bg" {...backgroundImageConfig(canvas, backgroundImage)} />
-                )}
-                {doc.elements.map((element) =>
-                  element.visible ? (
-                    <DesignNode
-                      key={element.id}
-                      element={element}
-                      image={element.type === 'image' ? assets[element.imageId]?.image : undefined}
-                      isSelected={selectedId === element.id}
-                      spacePressed={spacePressed}
-                      onSelect={() => select(element.id)}
-                      onEdit={() => {
-                        select(element.id);
-                        if (element.type === 'text' && !element.locked) setEditingId(element.id);
-                      }}
-                      onLive={(patch) => setTransient({ id: element.id, patch })}
-                      onCommit={(patch) => {
-                        setTransient(null);
-                        patchElement(element.id, patch);
-                      }}
-                    />
-                  ) : null,
-                )}
+                {/* Canvas content clipped strictly to canvas bounds to prevent overflowing into workspace */}
+                <Group clipX={0} clipY={0} clipWidth={docWidth} clipHeight={docHeight}>
+                  <Rect name="canvas-bg" {...backgroundRectConfig(canvas)} />
+                  {backgroundImage && (
+                    <KonvaImage name="canvas-bg" {...backgroundImageConfig(canvas, backgroundImage)} />
+                  )}
+                  {doc.elements.map((element) =>
+                    element.visible ? (
+                      <DesignNode
+                        key={element.id}
+                        element={element}
+                        image={element.type === 'image' ? assets[element.imageId]?.image : undefined}
+                        isSelected={selectedId === element.id}
+                        spacePressed={spacePressed}
+                        onSelect={() => select(element.id)}
+                        onEdit={() => {
+                          select(element.id);
+                          if (element.type === 'text' && !element.locked) setEditingId(element.id);
+                        }}
+                        onLive={(patch) => setTransient({ id: element.id, patch })}
+                        onCommit={(patch) => {
+                          setTransient(null);
+                          patchElement(element.id, patch);
+                        }}
+                      />
+                    ) : null,
+                  )}
+                </Group>
+                <Rect
+                  listening={false}
+                  strokeScaleEnabled={false}
+                  x={0}
+                  y={0}
+                  width={docWidth}
+                  height={docHeight}
+                  stroke="rgba(255, 255, 255, 0.22)"
+                  strokeWidth={1}
+                />
                 {guides.map((x) => (
                   <Line
                     key={x}
@@ -444,20 +457,6 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
                     dash={[7, 6]}
                   />
                 ))}
-                <Line
-                  listening={false}
-                  strokeScaleEnabled={false}
-                  points={[0, 0, docWidth, 0]}
-                  stroke="rgba(255,255,255,0.28)"
-                  strokeWidth={1}
-                />
-                <Line
-                  listening={false}
-                  strokeScaleEnabled={false}
-                  points={[0, docHeight, docWidth, docHeight]}
-                  stroke="rgba(255,255,255,0.28)"
-                  strokeWidth={1}
-                />
                 <Transformer
                   ref={transformerRef}
                   rotateEnabled={!selected?.locked}

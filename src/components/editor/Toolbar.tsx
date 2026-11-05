@@ -58,9 +58,9 @@ export function Toolbar() {
         accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
         multiple
         onChange={(event) => {
-          const files = [...(event.target.files ?? [])];
+          const files = event.target.files ? Array.from(event.target.files) : [];
           event.target.value = '';
-          void addImageFiles(files);
+          if (files.length) void addImageFiles(files);
         }}
       />
     </div>
