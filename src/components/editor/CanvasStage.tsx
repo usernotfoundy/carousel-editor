@@ -295,6 +295,34 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
   const guides = Array.from({ length: canvas.slideCount + 1 }, (_, index) => index * canvas.slideWidth);
   const backgroundImage = canvas.background.imageId ? assets[canvas.background.imageId] : undefined;
 
+  const stageWidth = viewport.size.w;
+  const isMobile = stageWidth > 0 ? stageWidth < 640 : (typeof window !== 'undefined' ? window.innerWidth < 640 : false);
+  const isTablet = stageWidth > 0 ? stageWidth < 1024 : (typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
+
+  const resizerConfig = isMobile
+    ? {
+        borderStrokeWidth: 1,
+        anchorSize: 7,
+        anchorStrokeWidth: 1,
+        anchorCornerRadius: 2,
+        rotateAnchorOffset: 18,
+      }
+    : isTablet
+      ? {
+          borderStrokeWidth: 1.25,
+          anchorSize: 8,
+          anchorStrokeWidth: 1,
+          anchorCornerRadius: 2,
+          rotateAnchorOffset: 22,
+        }
+      : {
+          borderStrokeWidth: 1.5,
+          anchorSize: 9,
+          anchorStrokeWidth: 1.2,
+          anchorCornerRadius: 2.5,
+          rotateAnchorOffset: 26,
+        };
+
   const startPan = (event: MouseEvent | PointerEvent) => {
     panSession.current = {
       x: event.clientX,
@@ -366,6 +394,15 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
                 startPan(event.evt);
               }
             }}
+            onTouchStart={(event) => {
+              const stage = event.target.getStage();
+              if (!stage) return;
+              const empty = event.target === stage || event.target.name() === 'canvas-bg';
+              if (empty) {
+                select(null);
+                if (editingId) setEditingId(null);
+              }
+            }}
           >
             <Layer>
               <Group x={viewport.pan.x} y={viewport.pan.y} scaleX={viewport.zoom} scaleY={viewport.zoom}>
@@ -424,13 +461,13 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
                   resizeEnabled={!selected?.locked}
                   flipEnabled={false}
                   borderStroke="#7eb6ff"
-                  borderStrokeWidth={1.5 / viewport.zoom}
+                  borderStrokeWidth={resizerConfig.borderStrokeWidth}
                   anchorFill="#ffffff"
                   anchorStroke="#6ea2e8"
-                  anchorStrokeWidth={1 / viewport.zoom}
-                  anchorSize={8 / viewport.zoom}
-                  anchorCornerRadius={2 / viewport.zoom}
-                  rotateAnchorOffset={26 / viewport.zoom}
+                  anchorStrokeWidth={resizerConfig.anchorStrokeWidth}
+                  anchorSize={resizerConfig.anchorSize}
+                  anchorCornerRadius={resizerConfig.anchorCornerRadius}
+                  rotateAnchorOffset={resizerConfig.rotateAnchorOffset}
                   keepRatio={
                     selected?.type === 'image'
                       ? selected.lockAspect && !shiftKey
@@ -444,7 +481,8 @@ export function CanvasStage({ viewport }: { viewport: Viewport }) {
                   rotationSnaps={shiftKey ? [0, 45, 90, 135, 180, 225, 270, 315] : []}
                   rotationSnapTolerance={shiftKey ? 8 : 0}
                   boundBoxFunc={(oldBox, newBox) => {
-                    if (newBox.width < 12 || newBox.height < 12) return oldBox;
+                    const minPx = Math.max(8, 8 * viewport.zoom);
+                    if (Math.abs(newBox.width) < minPx || Math.abs(newBox.height) < minPx) return oldBox;
                     return newBox;
                   }}
                 />
@@ -510,6 +548,11 @@ function DesignNode({
     draggable,
     onMouseDown: (event: KonvaEventObject<MouseEvent>) => {
       if (spacePressed || event.evt.button === 1) return;
+      event.cancelBubble = true;
+      onSelect();
+    },
+    onTouchStart: (event: KonvaEventObject<TouchEvent>) => {
+      if (spacePressed) return;
       event.cancelBubble = true;
       onSelect();
     },

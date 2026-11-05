@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useEditor } from '../../context/EditorContext';
 import { useViewport } from '../../hooks/useViewport';
 import { isTypingTarget } from '../../utils/geometry';
@@ -27,7 +27,7 @@ export function Editor() {
   const [confirmNew, setConfirmNew] = useState(false);
   const [panel, setPanel] = useState<'layers' | 'properties' | null>(null);
   const [splash, setSplash] = useState<'hold' | 'leave' | 'done'>('hold');
-  const openedAt = useRef(performance.now());
+  const [openedAt] = useState(() => performance.now());
 
   const registerPlacement = editor.registerPlacement;
   const ready = editor.ready;
@@ -38,11 +38,11 @@ export function Editor() {
 
   useEffect(() => {
     if (!ready || splash !== 'hold') return;
-    const elapsed = performance.now() - openedAt.current;
+    const elapsed = performance.now() - openedAt;
     const wait = Math.max(0, SPLASH_HOLD_MS - elapsed);
     const handle = window.setTimeout(() => setSplash('leave'), wait);
     return () => window.clearTimeout(handle);
-  }, [ready, splash]);
+  }, [openedAt, ready, splash]);
 
   useEffect(() => {
     if (splash !== 'leave') return;
