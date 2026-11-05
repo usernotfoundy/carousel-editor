@@ -13,7 +13,7 @@ import {
   Text as KonvaText,
   Transformer,
 } from 'react-konva';
-import { Crop, ImagePlus, LayoutTemplate, Lock } from 'lucide-react';
+import { LayoutTemplate, Lock } from 'lucide-react';
 import type { EditorElement } from '../../types/editor';
 import type { useViewport } from '../../hooks/useViewport';
 import { useEditor } from '../../context/EditorContext';
@@ -67,7 +67,6 @@ export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onT
     openGallery,
     galleryTarget,
     cropTarget,
-    openCrop,
   } = useEditor();
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -536,35 +535,6 @@ export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onT
             stageSize={viewport.size}
             onOpenGallery={selected.type === 'image' ? () => openGallery(selected) : undefined}
           />
-        )}
-        {selected && selected.type === 'image' && !selected.locked && !galleryTarget && !cropTarget && (
-          <div
-            className="canvas-image-action-pill"
-            style={{
-              transform: `translate(${viewport.pan.x + (selected.x + selected.width / 2) * viewport.zoom}px, ${viewport.pan.y + selected.y * viewport.zoom + 12}px)`,
-            }}
-          >
-            <div className="canvas-pill-group">
-              <button
-                type="button"
-                className="canvas-pill-btn"
-                onClick={() => openGallery(selected)}
-                title="Replace with your photo from gallery or device"
-              >
-                <ImagePlus size={13} />
-                Replace Photo
-              </button>
-              <button
-                type="button"
-                className="canvas-pill-btn secondary"
-                onClick={() => openCrop(selected)}
-                title="Crop allowable canvas without stretching"
-              >
-                <Crop size={13} />
-                Crop
-              </button>
-            </div>
-          </div>
         )}
         {dragOver && <div className="drop-overlay">Drop images onto the continuous canvas</div>}
         {doc.elements.length === 0 && (
