@@ -10,7 +10,7 @@ export function PhotoGalleryModal({
   element: ImageElement;
   onClose: () => void;
 }) {
-  const { assets, replaceImageElement, replaceImageWithAsset } = useEditor();
+  const { assets, replaceImageElement, replaceImageWithAsset, openCrop } = useEditor();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,6 +20,16 @@ export function PhotoGalleryModal({
     if (closing) return;
     setClosing(true);
     setTimeout(onClose, 180);
+  };
+
+  const handleProceedWithCrop = (updated: ImageElement | null) => {
+    setClosing(true);
+    setTimeout(() => {
+      onClose();
+      if (updated) {
+        openCrop(updated);
+      }
+    }, 180);
   };
 
   useEffect(() => {
@@ -37,16 +47,16 @@ export function PhotoGalleryModal({
     const file = files[0];
     setLoading(true);
     try {
-      await replaceImageElement(element.id, file);
-      handleClose();
+      const updated = await replaceImageElement(element.id, file);
+      handleProceedWithCrop(updated);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSelectAsset = (assetId: string) => {
-    replaceImageWithAsset(element.id, assetId);
-    handleClose();
+    const updated = replaceImageWithAsset(element.id, assetId);
+    handleProceedWithCrop(updated);
   };
 
   return (

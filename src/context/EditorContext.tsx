@@ -81,8 +81,8 @@ type EditorContextValue = {
   setSlideCount: (count: number) => void;
   setProjectName: (name: string) => void;
   addImageFiles: (files: File[]) => Promise<void>;
-  replaceImageElement: (elementId: string, file: File) => Promise<void>;
-  replaceImageWithAsset: (elementId: string, imageId: string) => void;
+  replaceImageElement: (elementId: string, file: File) => Promise<ImageElement | null>;
+  replaceImageWithAsset: (elementId: string, imageId: string) => ImageElement | null;
   addText: () => void;
   addShape: (shape: ShapeKind) => void;
   setBackgroundImage: (file: File) => Promise<void>;
@@ -405,7 +405,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   );
 
   const replaceImageElement = useCallback(
-    async (elementId: string, file: File) => {
+    async (elementId: string, file: File): Promise<ImageElement | null> => {
       try {
         const prepared = await prepareImageFile(file);
         const imageId = crypto.randomUUID();
@@ -413,6 +413,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         const aspect = prepared.width / prepared.height;
 
         let frameAspectMismatch = false;
+        let updated: ImageElement | null = null;
 
         history.commit((current) => ({
           ...current,
@@ -422,7 +423,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             if (Math.abs(aspect - frameRatio) > 0.05) {
               frameAspectMismatch = true;
             }
-            return {
+            const res: ImageElement = {
               ...element,
               imageId,
               name: (file.name.replace(/\.[^.]+$/, '') || element.name).slice(0, 80),
@@ -432,26 +433,31 @@ export function EditorProvider({ children }: { children: ReactNode }) {
               cropPosition: 'center',
               crop: undefined,
             };
+            updated = res;
+            return res;
           }),
         }));
         if (frameAspectMismatch) {
-          notify(`Replaced photo with ${file.name} (auto-fit crop applied).`);
+          notify(`Replaced photo with ${file.name}. Adjust crop if desired.`);
         } else {
           notify(`Replaced photo with ${file.name}.`);
         }
+        return updated;
       } catch (error) {
         notify(error instanceof Error ? error.message : 'Could not replace image.', 'error');
+        return null;
       }
     },
     [history, notify, rememberAsset],
   );
 
   const replaceImageWithAsset = useCallback(
-    (elementId: string, imageId: string) => {
+    (elementId: string, imageId: string): ImageElement | null => {
       const asset = assets[imageId];
-      if (!asset) return;
+      if (!asset) return null;
       const aspect = asset.width / asset.height;
       let frameAspectMismatch = false;
+      let updated: ImageElement | null = null;
 
       history.commit((current) => ({
         ...current,
@@ -461,7 +467,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
           if (Math.abs(aspect - frameRatio) > 0.05) {
             frameAspectMismatch = true;
           }
-          return {
+          const res: ImageElement = {
             ...element,
             imageId,
             width: element.width,
@@ -470,13 +476,16 @@ export function EditorProvider({ children }: { children: ReactNode }) {
             cropPosition: 'center',
             crop: undefined,
           };
+          updated = res;
+          return res;
         }),
       }));
       if (frameAspectMismatch) {
-        notify('Updated photo from gallery (auto-fit crop applied).');
+        notify('Updated photo from gallery. Adjust crop if desired.');
       } else {
         notify('Updated photo from gallery.');
       }
+      return updated;
     },
     [assets, history, notify],
   );
