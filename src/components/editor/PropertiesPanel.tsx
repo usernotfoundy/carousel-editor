@@ -8,6 +8,7 @@ import {
   ChevronsDown,
   ChevronsUp,
   Copy,
+  Crop,
   ImagePlus,
   Lock,
   Trash2,
@@ -242,6 +243,32 @@ export function PropertiesPanel() {
               <ImagePlus size={15} />
               Replace Photo / Gallery
             </button>
+            <button
+              type="button"
+              className="text-btn crop-photo-prop-btn"
+              onClick={() => editor.openCrop(live)}
+              title="Crop to allowable canvas without stretching"
+            >
+              <Crop size={15} />
+              Adjust Frame & Crop
+            </button>
+            <Field label="Frame Alignment">
+              <select
+                value={live.cropPosition || 'center'}
+                onChange={(event) =>
+                  editor.patchElement(live.id, {
+                    cropPosition: event.target.value as any,
+                    crop: undefined,
+                  })
+                }
+              >
+                <option value="center">Center (Auto-fit)</option>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+            </Field>
             <label className="check">
               <input
                 type="checkbox"

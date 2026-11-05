@@ -11,6 +11,8 @@ import { createContext, useContext, useSyncExternalStore } from 'react';
 import type {
   AssetMap,
   CanvasPatch,
+  CropPosition,
+  CustomCrop,
   EditorDocument,
   EditorElement,
   ElementPatch,
@@ -95,6 +97,10 @@ type EditorContextValue = {
   galleryTarget: ImageElement | null;
   openGallery: (element: ImageElement) => void;
   closeGallery: () => void;
+  cropTarget: ImageElement | null;
+  openCrop: (element: ImageElement) => void;
+  closeCrop: () => void;
+  setElementCrop: (elementId: string, cropPosition: CropPosition, customCrop?: CustomCrop) => void;
   notify: (message: string, tone?: ToastMessage['tone']) => void;
   dismissToast: () => void;
 };
@@ -193,6 +199,34 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   const closeGallery = useCallback(() => {
     setGalleryTarget(null);
   }, []);
+
+  const [cropTarget, setCropTarget] = useState<ImageElement | null>(null);
+
+  const openCrop = useCallback((element: ImageElement) => {
+    setCropTarget(element);
+  }, []);
+
+  const closeCrop = useCallback(() => {
+    setCropTarget(null);
+  }, []);
+
+  const setElementCrop = useCallback(
+    (elementId: string, cropPosition: CropPosition, customCrop?: CustomCrop) => {
+      history.commit((current) => ({
+        ...current,
+        elements: current.elements.map((element) => {
+          if (element.id !== elementId || element.type !== 'image') return element;
+          return {
+            ...element,
+            cropPosition,
+            crop: customCrop,
+          };
+        }),
+      }));
+      setCropTarget((prev) => (prev && prev.id === elementId ? { ...prev, cropPosition, crop: customCrop } : prev));
+    },
+    [history],
+  );
 
   const patchElement = useCallback(
     (id: string, patch: ElementPatch, mode: 'commit' | 'preview' = 'commit') => {
@@ -378,31 +412,33 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         await rememberAsset(imageId, prepared.blob);
         const aspect = prepared.width / prepared.height;
 
+        let frameAspectMismatch = false;
+
         history.commit((current) => ({
           ...current,
           elements: current.elements.map((element) => {
             if (element.id !== elementId || element.type !== 'image') return element;
-            let width = element.width;
-            let height = element.height;
-            if (element.lockAspect) {
-              const currentAspect = width / height;
-              if (aspect > currentAspect) {
-                height = Math.round(width / aspect);
-              } else {
-                width = Math.round(height * aspect);
-              }
+            const frameRatio = element.width / element.height;
+            if (Math.abs(aspect - frameRatio) > 0.05) {
+              frameAspectMismatch = true;
             }
             return {
               ...element,
               imageId,
               name: (file.name.replace(/\.[^.]+$/, '') || element.name).slice(0, 80),
-              width: Math.max(8, width),
-              height: Math.max(8, height),
+              width: element.width,
+              height: element.height,
               aspectRatio: aspect,
+              cropPosition: 'center',
+              crop: undefined,
             };
           }),
         }));
-        notify(`Replaced photo with ${file.name}.`);
+        if (frameAspectMismatch) {
+          notify(`Replaced photo with ${file.name} (auto-fit crop applied).`);
+        } else {
+          notify(`Replaced photo with ${file.name}.`);
+        }
       } catch (error) {
         notify(error instanceof Error ? error.message : 'Could not replace image.', 'error');
       }
@@ -415,31 +451,32 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       const asset = assets[imageId];
       if (!asset) return;
       const aspect = asset.width / asset.height;
+      let frameAspectMismatch = false;
 
       history.commit((current) => ({
         ...current,
         elements: current.elements.map((element) => {
           if (element.id !== elementId || element.type !== 'image') return element;
-          let width = element.width;
-          let height = element.height;
-          if (element.lockAspect) {
-            const currentAspect = width / height;
-            if (aspect > currentAspect) {
-              height = Math.round(width / aspect);
-            } else {
-              width = Math.round(height * aspect);
-            }
+          const frameRatio = element.width / element.height;
+          if (Math.abs(aspect - frameRatio) > 0.05) {
+            frameAspectMismatch = true;
           }
           return {
             ...element,
             imageId,
-            width: Math.max(8, width),
-            height: Math.max(8, height),
+            width: element.width,
+            height: element.height,
             aspectRatio: aspect,
+            cropPosition: 'center',
+            crop: undefined,
           };
         }),
       }));
-      notify('Updated photo from gallery.');
+      if (frameAspectMismatch) {
+        notify('Updated photo from gallery (auto-fit crop applied).');
+      } else {
+        notify('Updated photo from gallery.');
+      }
     },
     [assets, history, notify],
   );
@@ -613,6 +650,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       galleryTarget,
       openGallery,
       closeGallery,
+      cropTarget,
+      openCrop,
+      closeCrop,
+      setElementCrop,
       notify,
       dismissToast,
     }),
@@ -630,6 +671,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       galleryTarget,
       closeGallery,
       openGallery,
+      cropTarget,
+      openCrop,
+      closeCrop,
+      setElementCrop,
       history.canRedo,
       history.canUndo,
       history.flushPending,

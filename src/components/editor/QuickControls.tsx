@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  Crop,
   ImagePlus,
   Lock,
   Trash2,
@@ -21,7 +22,7 @@ interface QuickControlsProps {
 }
 
 export function QuickControls({ element, zoom, pan, stageSize, onOpenGallery }: QuickControlsProps) {
-  const { document: doc, patchElement, moveLayer, nudge, duplicateSelected, deleteSelected } = useEditor();
+  const { document: doc, patchElement, moveLayer, nudge, duplicateSelected, deleteSelected, openCrop } = useEditor();
 
   const elementIndex = doc.elements.findIndex((item) => item.id === element.id);
   const isTopLayer = elementIndex === doc.elements.length - 1;
@@ -53,18 +54,30 @@ export function QuickControls({ element, zoom, pan, stageSize, onOpenGallery }: 
       role="toolbar"
       aria-label="Focused element controls"
     >
-      {/* 0. Replace Photo Component (for image elements) */}
-      {element.type === 'image' && onOpenGallery && (
+      {/* 0. Replace Photo & Crop Components (for image elements) */}
+      {element.type === 'image' && (
         <>
+          {onOpenGallery && (
+            <button
+              type="button"
+              className="quick-btn replace-photo-btn highlight"
+              onClick={onOpenGallery}
+              aria-label="Replace photo"
+              title="Choose from photo gallery or upload a new photo"
+            >
+              <ImagePlus size={14} />
+              <span>Replace</span>
+            </button>
+          )}
           <button
             type="button"
-            className="quick-btn replace-photo-btn highlight"
-            onClick={onOpenGallery}
-            aria-label="Replace photo"
-            title="Choose from photo gallery or upload a new photo"
+            className="quick-btn crop-photo-btn"
+            onClick={() => openCrop(element)}
+            aria-label="Crop image"
+            title="Adjust allowable canvas frame and crop without stretching"
           >
-            <ImagePlus size={14} />
-            <span>Replace Photo</span>
+            <Crop size={14} />
+            <span>Crop</span>
           </button>
           <span className="quick-divider" aria-hidden="true" />
         </>

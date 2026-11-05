@@ -38,11 +38,22 @@ type ElementBase = {
   locked: boolean;
 };
 
+export type CropPosition = 'center' | 'top' | 'bottom' | 'left' | 'right';
+
+export type CustomCrop = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 export type ImageElement = ElementBase & {
   type: 'image';
   imageId: string;
   lockAspect: boolean;
   aspectRatio: number;
+  cropPosition?: CropPosition;
+  crop?: CustomCrop;
 };
 
 export type TextElement = ElementBase & {
@@ -92,6 +103,8 @@ export type ElementPatch = {
   fill?: string;
   lockAspect?: boolean;
   cornerRadius?: number;
+  cropPosition?: CropPosition;
+  crop?: CustomCrop;
 };
 
 export type ImageAsset = {

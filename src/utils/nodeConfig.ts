@@ -1,5 +1,5 @@
 import type Konva from 'konva';
-import type { CanvasSettings, ImageElement, ShapeElement, TextElement } from '../types/editor';
+import type { CanvasSettings, CropPosition, CustomCrop, ImageElement, ShapeElement, TextElement } from '../types/editor';
 import type { ImageAsset } from '../types/editor';
 import { coverRect, gradientPoints } from './geometry';
 import { totalWidth } from './formats';
@@ -24,10 +24,76 @@ export function shiftedBox(element: Box, shiftX: number) {
   };
 }
 
+export function computeImageCoverCrop(
+  srcWidth: number,
+  srcHeight: number,
+  targetWidth: number,
+  targetHeight: number,
+  cropPosition: CropPosition = 'center',
+  customCrop?: CustomCrop,
+) {
+  if (srcWidth <= 0 || srcHeight <= 0 || targetWidth <= 0 || targetHeight <= 0) {
+    return { x: 0, y: 0, width: srcWidth, height: srcHeight };
+  }
+
+  if (customCrop) {
+    return customCrop;
+  }
+
+  const srcRatio = srcWidth / srcHeight;
+  const targetRatio = targetWidth / targetHeight;
+
+  if (Math.abs(srcRatio - targetRatio) < 0.001) {
+    return { x: 0, y: 0, width: srcWidth, height: srcHeight };
+  }
+
+  if (srcRatio > targetRatio) {
+    // Source image is wider than target frame: preserve height, crop sides
+    const cropWidth = srcHeight * targetRatio;
+    let cropX = (srcWidth - cropWidth) / 2;
+    if (cropPosition === 'left') cropX = 0;
+    if (cropPosition === 'right') cropX = srcWidth - cropWidth;
+    return {
+      x: Math.round(Math.max(0, cropX)),
+      y: 0,
+      width: Math.round(Math.min(srcWidth, cropWidth)),
+      height: Math.round(srcHeight),
+    };
+  } else {
+    // Source image is taller than target frame: preserve width, crop top/bottom
+    const cropHeight = srcWidth / targetRatio;
+    let cropY = (srcHeight - cropHeight) / 2;
+    if (cropPosition === 'top') cropY = 0;
+    if (cropPosition === 'bottom') cropY = srcHeight - cropHeight;
+    return {
+      x: 0,
+      y: Math.round(Math.max(0, cropY)),
+      width: Math.round(srcWidth),
+      height: Math.round(Math.min(srcHeight, cropHeight)),
+    };
+  }
+}
+
 export function imageConfig(element: ImageElement, image: CanvasImageSource, shiftX = 0) {
+  const imgWidth = (image as any).naturalWidth || (image as any).width || 0;
+  const imgHeight = (image as any).naturalHeight || (image as any).height || 0;
+
+  const crop =
+    imgWidth > 0 && imgHeight > 0
+      ? computeImageCoverCrop(
+          imgWidth,
+          imgHeight,
+          element.width,
+          element.height,
+          element.cropPosition,
+          element.crop,
+        )
+      : undefined;
+
   return {
     ...shiftedBox(element, shiftX),
     image,
+    ...(crop ? { crop } : {}),
   };
 }
 

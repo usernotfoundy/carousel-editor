@@ -17,6 +17,7 @@ import { SplashScreen } from './SplashScreen';
 import { CarouselPreview } from '../preview/CarouselPreview';
 import { TemplatesModal } from './TemplatesModal';
 import { PhotoGalleryModal } from './PhotoGalleryModal';
+import { CropModal } from './CropModal';
 
 const SPLASH_HOLD_MS = 2300;
 const SPLASH_FADE_MS = 480;
@@ -165,6 +166,7 @@ export function Editor() {
       <Toast toast={editor.toast} onDismiss={editor.dismissToast} />
       {templatesOpen && <TemplatesModal onClose={() => setTemplatesOpen(false)} />}
       {editor.galleryTarget && <PhotoGalleryModal element={editor.galleryTarget} onClose={editor.closeGallery} />}
+      {editor.cropTarget && <CropModal element={editor.cropTarget} onClose={editor.closeCrop} />}
       {preview && <CarouselPreview initialIndex={viewport.activeSlide} onClose={() => setPreview(false)} />}
       {exporting && <ExportDialog onClose={() => setExporting(false)} />}
       {confirmNew && (

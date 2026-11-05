@@ -29,6 +29,8 @@ export function applyPatch(element: EditorElement, patch: ElementPatch): EditorE
       width: Math.max(8, width),
       height: Math.max(8, height),
       aspectRatio,
+      cropPosition: patch.cropPosition !== undefined ? patch.cropPosition : element.cropPosition,
+      crop: patch.crop !== undefined ? patch.crop : element.crop,
     };
   }
 
