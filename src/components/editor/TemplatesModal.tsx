@@ -82,10 +82,10 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
             <div>
               <div className="templates-modal-title-row">
                 <h2>Carousel Templates</h2>
-                <span className="templates-count-badge">4 layouts</span>
+                <span className="templates-count-badge">{filteredTemplates.length} layouts</span>
               </div>
               <p className="templates-modal-sub">
-                Pre-designed seamless continuous carousels. Each template spans 10 connected slides.
+                Pre-designed seamless continuous carousels with panoramas, layered collages, and editorial framing.
               </p>
             </div>
           </div>
