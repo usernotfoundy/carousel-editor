@@ -2,6 +2,7 @@ import type { EditorDocument, EditorElement } from '../types/editor';
 import type { CarouselTemplate } from '../types/template';
 import { idbGet, idbPut } from './storage';
 import { assetFromBlob } from './image';
+import { drawImageHolder } from './imageHolder';
 
 function baseElement(partial: Pick<EditorElement, 'id' | 'name' | 'x' | 'y' | 'width' | 'height'>) {
   return {
@@ -1113,22 +1114,33 @@ export function getTemplateById(id: string) {
 
 export async function loadTemplateAssets(template: CarouselTemplate) {
   const map: Record<string, import('../types/editor').ImageAsset> = {};
+  const doc = template.createDocument();
+  const imageElements = doc.elements.filter((el): el is import('../types/editor').ImageElement => el.type === 'image');
+
+  const dimMap: Record<string, { width: number; height: number; name: string }> = {};
+  for (const el of imageElements) {
+    if (!dimMap[el.imageId]) {
+      dimMap[el.imageId] = { width: el.width, height: el.height, name: el.name };
+    }
+  }
+
   await Promise.all(
-    Object.entries(template.assets).map(async ([imageId, url]) => {
+    Object.keys(template.assets).map(async (imageId) => {
       try {
-        let blob = await idbGet(imageId);
+        const dim = dimMap[imageId] || { width: 1080, height: 1350, name: 'Photo' };
+        const storageKey = `holder_v2_${template.meta.id}_${imageId}_${dim.width}_${dim.height}`;
+        let blob = await idbGet(storageKey);
         if (!blob) {
-          const res = await fetch(url);
-          if (res.ok) {
-            blob = await res.blob();
-            await idbPut(imageId, blob);
-          }
+          blob = await drawImageHolder(dim.width, dim.height, 'Add Photo', 'Click or tap to choose image');
+          await idbPut(storageKey, blob);
         }
         if (blob) {
-          map[imageId] = await assetFromBlob(imageId, blob);
+          const asset = await assetFromBlob(imageId, blob);
+          asset.isPlaceholder = true;
+          map[imageId] = asset;
         }
       } catch (err) {
-        console.warn(`Could not preload template asset ${imageId}`, err);
+        console.warn(`Could not generate template holder asset ${imageId}`, err);
       }
     }),
   );

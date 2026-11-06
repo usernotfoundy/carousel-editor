@@ -428,6 +428,19 @@ export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onT
                         key={element.id}
                         element={element}
                         image={element.type === 'image' ? assets[element.imageId]?.image : undefined}
+                        isPlaceholder={
+                          element.type === 'image'
+                            ? Boolean(
+                                assets[element.imageId]?.isPlaceholder ||
+                                  element.imageId.includes('holder') ||
+                                  element.imageId.startsWith('t1_photo_') ||
+                                  element.imageId.startsWith('t2_photo_') ||
+                                  element.imageId.startsWith('t3_photo_') ||
+                                  element.imageId.startsWith('t4_photo_') ||
+                                  element.imageId.includes('template-hero'),
+                              )
+                            : false
+                        }
                         isSelected={selectedId === element.id}
                         spacePressed={spacePressed}
                         onSelect={() => select(element.id)}
@@ -573,6 +586,7 @@ export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onT
 function DesignNode({
   element,
   image,
+  isPlaceholder,
   isSelected,
   spacePressed,
   onSelect,
@@ -582,6 +596,7 @@ function DesignNode({
 }: {
   element: EditorElement;
   image?: CanvasImageSource;
+  isPlaceholder?: boolean;
   isSelected: boolean;
   spacePressed: boolean;
   onSelect: () => void;
@@ -599,16 +614,48 @@ function DesignNode({
     onMouseDown: (event: KonvaEventObject<MouseEvent>) => {
       if (spacePressed || event.evt.button === 1 || !isInteractive) return;
       event.cancelBubble = true;
+      if (isPlaceholder) {
+        const stage = event.target.getStage();
+        const pointer = stage?.getPointerPosition();
+        if (pointer) {
+          const transform = event.target.getAbsoluteTransform().copy().invert();
+          const local = transform.point(pointer);
+          const cx = element.width / 2;
+          const cy = element.height / 2;
+          const dist = Math.hypot(local.x - cx, local.y - cy);
+          const hitRadius = Math.max(34, Math.min(element.width, element.height) * 0.16);
+          if (dist <= hitRadius) {
+            onEdit();
+            return;
+          }
+        }
+      }
       onSelect();
     },
     onTouchStart: (event: KonvaEventObject<TouchEvent>) => {
       if (spacePressed || !isInteractive) return;
       event.cancelBubble = true;
+      if (isPlaceholder) {
+        const stage = event.target.getStage();
+        const pointer = stage?.getPointerPosition();
+        if (pointer) {
+          const transform = event.target.getAbsoluteTransform().copy().invert();
+          const local = transform.point(pointer);
+          const cx = element.width / 2;
+          const cy = element.height / 2;
+          const dist = Math.hypot(local.x - cx, local.y - cy);
+          const hitRadius = Math.max(34, Math.min(element.width, element.height) * 0.16);
+          if (dist <= hitRadius) {
+            onEdit();
+            return;
+          }
+        }
+      }
       onSelect();
     },
     onMouseEnter: (event: KonvaEventObject<MouseEvent>) => {
       const stage = event.target.getStage();
-      if (stage) stage.container().style.cursor = element.locked || spacePressed ? 'grab' : isSelected ? 'move' : 'pointer';
+      if (stage) stage.container().style.cursor = element.locked || spacePressed ? 'grab' : isPlaceholder ? 'pointer' : isSelected ? 'move' : 'pointer';
     },
     onMouseLeave: (event: KonvaEventObject<MouseEvent>) => {
       const stage = event.target.getStage();

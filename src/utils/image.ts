@@ -83,7 +83,7 @@ export async function prepareImageFile(file: File) {
   }
 }
 
-export async function assetFromBlob(id: string, blob: Blob) {
+export async function assetFromBlob(id: string, blob: Blob, isPlaceholder?: boolean): Promise<import('../types/editor').ImageAsset> {
   const url = URL.createObjectURL(blob);
   try {
     const image = await loadHtmlImage(url);
@@ -93,6 +93,7 @@ export async function assetFromBlob(id: string, blob: Blob) {
       image,
       width: image.naturalWidth || image.width,
       height: image.naturalHeight || image.height,
+      isPlaceholder,
     };
   } catch (error) {
     URL.revokeObjectURL(url);

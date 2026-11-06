@@ -1,9 +1,11 @@
 import type { EditorDocument, EditorElement } from '../types/editor';
 import { idbGet, idbPut } from './storage';
+import { drawImageHolder } from './imageHolder';
+export { drawImageHolder } from './imageHolder';
 export { CAROUSEL_TEMPLATES, getTemplates, getTemplateById, loadTemplateAssets } from './templateDefinitions';
 export type { CarouselTemplate, TemplateCategory, TemplateMeta } from '../types/template';
 
-export const TEMPLATE_IMAGE_ID = 'template-hero-v1';
+export const TEMPLATE_IMAGE_ID = 'template-hero-holder-v2';
 
 const IMAGE_X = 40;
 const IMAGE_Y = 210;
@@ -11,71 +13,13 @@ const IMAGE_W = 2120;
 const IMAGE_H = 960;
 
 export function drawHero(width = IMAGE_W, height = IMAGE_H) {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext('2d');
-  if (!context) return Promise.reject(new Error('Could not create the sample image.'));
-
-  const sky = context.createLinearGradient(0, 0, 0, height);
-  sky.addColorStop(0, '#f6dcc0');
-  sky.addColorStop(0.42, '#e38d78');
-  sky.addColorStop(0.74, '#35527d');
-  sky.addColorStop(1, '#18243f');
-  context.fillStyle = sky;
-  context.fillRect(0, 0, width, height);
-
-  const sunX = 1080 - IMAGE_X;
-  context.fillStyle = 'rgba(255, 236, 196, 0.45)';
-  context.beginPath();
-  context.arc(sunX, 300, 210, 0, Math.PI * 2);
-  context.fill();
-  context.fillStyle = '#fff3d4';
-  context.beginPath();
-  context.arc(sunX, 300, 132, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = '#3d5a86';
-  context.beginPath();
-  context.moveTo(0, 560);
-  context.bezierCurveTo(360, 430, 760, 690, 1160, 520);
-  context.bezierCurveTo(1560, 360, 1840, 600, width, 470);
-  context.lineTo(width, height);
-  context.lineTo(0, height);
-  context.closePath();
-  context.fill();
-
-  context.fillStyle = '#1c2c4b';
-  context.beginPath();
-  context.moveTo(0, 730);
-  context.bezierCurveTo(480, 590, 980, 840, 1500, 680);
-  context.bezierCurveTo(1760, 600, 1960, 760, width, 690);
-  context.lineTo(width, height);
-  context.lineTo(0, height);
-  context.closePath();
-  context.fill();
-
-  context.fillStyle = '#121c33';
-  context.beginPath();
-  context.moveTo(0, 860);
-  context.bezierCurveTo(700, 760, 1300, 920, width, 800);
-  context.lineTo(width, height);
-  context.lineTo(0, height);
-  context.closePath();
-  context.fill();
-
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error('Could not create the sample image.'));
-    }, 'image/png');
-  });
+  return drawImageHolder(width, height, 'Add Photo', 'Click or tap to choose image');
 }
 
 export async function ensureTemplateHero() {
   const existing = await idbGet(TEMPLATE_IMAGE_ID);
   if (existing) return;
-  const blob = await drawHero();
+  const blob = await drawImageHolder(IMAGE_W, IMAGE_H, 'Add Photo', 'Click or tap to choose image');
   await idbPut(TEMPLATE_IMAGE_ID, blob);
 }
 

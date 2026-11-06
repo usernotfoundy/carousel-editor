@@ -113,6 +113,7 @@ export type ImageAsset = {
   image: HTMLImageElement;
   width: number;
   height: number;
+  isPlaceholder?: boolean;
 };
 
 export type AssetMap = Record<string, ImageAsset>;
