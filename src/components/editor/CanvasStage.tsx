@@ -340,22 +340,27 @@ export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onT
 
   return (
     <div className="workspace">
-      <div className="ruler">
+      <div className="ruler" role="region" aria-label="Slide timeline ruler">
         <div className="ruler-track">
-          {Array.from({ length: canvas.slideCount }, (_, index) => (
-            <button
-              key={index}
-              type="button"
-              className={`ruler-slide ${viewport.activeSlide === index ? 'active' : ''}`}
-              style={{
-                left: viewport.pan.x + index * canvas.slideWidth * viewport.zoom,
-                width: Math.max(0, canvas.slideWidth * viewport.zoom),
-              }}
-              onClick={() => viewport.focusSlide(index)}
-            >
-              Slide {index + 1}
-            </button>
-          ))}
+          {Array.from({ length: canvas.slideCount }, (_, index) => {
+            const slideW = Math.max(0, canvas.slideWidth * viewport.zoom);
+            const isCompact = slideW < 58;
+            return (
+              <button
+                key={index}
+                type="button"
+                className={`ruler-slide ${viewport.activeSlide === index ? 'active' : ''} ${isCompact ? 'compact' : ''}`}
+                style={{
+                  left: viewport.pan.x + index * canvas.slideWidth * viewport.zoom,
+                  width: slideW,
+                }}
+                onClick={() => viewport.focusSlide(index)}
+                title={`Focus slide ${index + 1}`}
+              >
+                {isCompact ? `${index + 1}` : `Slide ${index + 1}`}
+              </button>
+            );
+          })}
         </div>
       </div>
       <div

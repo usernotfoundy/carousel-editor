@@ -405,32 +405,68 @@ button {
 }
 
 .ruler {
-  height: 34px;
+  height: 36px;
   position: relative;
   overflow: hidden;
   border-bottom: 1px solid #22262e;
   background: #12141a;
+  user-select: none;
 }
 
 .ruler-track {
   position: absolute;
   inset: 0;
+  pointer-events: none;
 }
 
 .ruler-slide {
   position: absolute;
-  top: 6px;
-  height: 22px;
-  overflow: hidden;
+  top: calc(50% - 13px);
+  height: 26px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  margin: 0;
   border-radius: 999px;
-  color: #c5ccda;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #8f9ba8;
   font-size: 11px;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms var(--ease-out);
+}
+
+.ruler-slide:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.ruler-slide:active {
+  transform: scale(0.96);
 }
 
 .ruler-slide.active {
+  background: rgba(126, 182, 255, 0.12);
+  border-color: rgba(126, 182, 255, 0.35);
   color: var(--guide);
+  font-weight: 700;
+}
+
+.ruler-slide.compact {
+  font-size: 12px;
+  letter-spacing: 0;
+  padding: 0 2px;
 }
 
 .stage-wrap {
@@ -1139,6 +1175,23 @@ input[type="range"] {
 
   .workspace {
     padding-bottom: 132px;
+  }
+
+  .ruler {
+    height: 38px;
+  }
+
+  .ruler-slide {
+    top: calc(50% - 14px);
+    height: 28px;
+    font-size: 11px;
+    line-height: 1;
+    padding: 0 4px;
+  }
+
+  .ruler-slide.compact {
+    font-size: 12px;
+    font-weight: 700;
   }
 
   .sidebar .tools {
