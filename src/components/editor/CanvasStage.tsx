@@ -13,7 +13,7 @@ import {
   Text as KonvaText,
   Transformer,
 } from 'react-konva';
-import { LayoutTemplate, Lock } from 'lucide-react';
+import { LayoutTemplate, Lock, Plus } from 'lucide-react';
 import type { EditorElement } from '../../types/editor';
 import type { useViewport } from '../../hooks/useViewport';
 import { useEditor } from '../../context/EditorContext';
@@ -432,11 +432,8 @@ export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onT
                           element.type === 'image'
                             ? Boolean(
                                 assets[element.imageId]?.isPlaceholder ||
+                                  element.imageId.match(/^t\d+_photo_/) ||
                                   element.imageId.includes('holder') ||
-                                  element.imageId.startsWith('t1_photo_') ||
-                                  element.imageId.startsWith('t2_photo_') ||
-                                  element.imageId.startsWith('t3_photo_') ||
-                                  element.imageId.startsWith('t4_photo_') ||
                                   element.imageId.includes('template-hero'),
                               )
                             : false
@@ -545,6 +542,52 @@ export function CanvasStage({ viewport, onTemplates }: { viewport: Viewport; onT
             </button>
           );
         })}
+        {/* Visual interactive '+' buttons on image placeholders */}
+        {doc.elements.map((el) => {
+          if (el.type !== 'image' || !el.visible) return null;
+          const isHolder = Boolean(
+            assets[el.imageId]?.isPlaceholder ||
+              el.imageId.match(/^t\d+_photo_/) ||
+              el.imageId.includes('holder') ||
+              el.imageId.includes('template-hero')
+          );
+          if (!isHolder) return null;
+
+          const centerX = viewport.pan.x + (el.x + el.width / 2) * viewport.zoom;
+          const centerY = viewport.pan.y + (el.y + el.height / 2) * viewport.zoom;
+          const rawBtnSize = Math.min(el.width, el.height) * viewport.zoom * 0.22;
+          const btnSize = Math.max(34, Math.min(68, Math.round(rawBtnSize)));
+          const isSelected = selectedId === el.id;
+
+          return (
+            <div
+              key={`add-img-wrap-${el.id}`}
+              className="canvas-add-photo-wrap"
+              style={{
+                transform: `translate(${centerX}px, ${centerY}px) translate(-50%, -50%)`,
+              }}
+            >
+              <button
+                type="button"
+                className={`canvas-add-photo-btn ${isSelected ? 'selected' : ''}`}
+                style={{
+                  width: `${btnSize}px`,
+                  height: `${btnSize}px`,
+                }}
+                title={`Click to add photo to ${el.name}`}
+                aria-label={`Add image to ${el.name}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  select(el.id);
+                  openGallery(el);
+                }}
+              >
+                <Plus size={Math.max(16, Math.round(btnSize * 0.48))} strokeWidth={2.6} />
+              </button>
+            </div>
+          );
+        })}
+
         {selected && !galleryTarget && !cropTarget && (
           <QuickControls
             element={selected}

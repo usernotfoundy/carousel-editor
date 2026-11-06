@@ -1,6 +1,7 @@
 import type { AssetMap, CanvasSettings, EditorDocument, EditorElement, FormatId } from '../types/editor';
 import { MAX_SLIDES, MIN_SLIDES, totalWidth } from './formats';
 import { assetFromBlob } from './image';
+import { drawImageHolder } from './imageHolder';
 
 const DB_NAME = 'continuum-carousel';
 const STORE = 'images';
@@ -175,12 +176,25 @@ export async function loadAssets(ids: string[]) {
   await Promise.all(
     ids.map(async (id) => {
       try {
-        const blob = await idbGet(id);
+        let blob = await idbGet(id);
+        const isTemplatePhoto = Boolean(
+          id.match(/^t\d+_photo_/) ||
+          id.includes('holder') ||
+          id.includes('template-hero') ||
+          id.startsWith('template-')
+        );
+
         if (!blob) {
-          missing.push(id);
-          return;
+          if (isTemplatePhoto) {
+            blob = await drawImageHolder(1080, 1350, 'Add Photo', 'Click or tap to choose image');
+            await idbPut(id, blob);
+          } else {
+            missing.push(id);
+            return;
+          }
         }
-        assets[id] = await assetFromBlob(id, blob);
+        const asset = await assetFromBlob(id, blob, isTemplatePhoto);
+        assets[id] = asset;
       } catch {
         missing.push(id);
       }

@@ -2261,8 +2261,9 @@ export async function loadTemplateAssets(template: CarouselTemplate, format: For
           blob = await drawImageHolder(dim.width, dim.height, 'Add Photo', 'Click or tap to choose image');
           await idbPut(storageKey, blob);
         }
+        await idbPut(imageId, blob);
         if (blob) {
-          const asset = await assetFromBlob(imageId, blob);
+          const asset = await assetFromBlob(imageId, blob, true);
           asset.isPlaceholder = true;
           map[imageId] = asset;
         }
