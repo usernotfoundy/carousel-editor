@@ -24,7 +24,7 @@ import type {
 } from '../types/editor';
 import { useHistory } from '../hooks/useHistory';
 import { applyPatch, duplicateElement, moveElements, reorderElements } from '../utils/elements';
-import { MAX_SLIDES, MIN_SLIDES, formatPreset, totalWidth } from '../utils/formats';
+import { FORMATS, MAX_SLIDES, MIN_SLIDES, adaptDocumentToFormat, totalWidth } from '../utils/formats';
 import { assetFromBlob, prepareImageFile } from '../utils/image';
 import { collectImageIds, idbPut, loadAssets, readSavedDocument, writeDocument } from '../utils/storage';
 import { createBlankDocument, createTemplateDocument, ensureTemplateHero, getTemplateById, loadTemplateAssets } from '../utils/template';
@@ -88,7 +88,7 @@ type EditorContextValue = {
   setBackgroundImage: (file: File) => Promise<void>;
   clearBackgroundImage: () => void;
   newProject: () => void;
-  applyTemplate: (templateId: string) => Promise<void>;
+  applyTemplate: (templateId: string, format?: FormatId) => Promise<void>;
   syncTextHeights: (patches: { id: string; height: number }[]) => void;
   registerPlacement: (getPlacement: () => Placement) => void;
   setTransient: (value: Transient) => void;
@@ -320,10 +320,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const setFormat = useCallback(
     (format: FormatId) => {
-      const preset = formatPreset(format);
-      updateCanvas({ format, slideWidth: preset.width, slideHeight: preset.height });
+      history.commit((current) => adaptDocumentToFormat(current, format));
     },
-    [updateCanvas],
+    [history],
   );
 
   const setSlideCount = useCallback(
@@ -572,20 +571,21 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   }, [history, transientStore]);
 
   const applyTemplate = useCallback(
-    async (templateId: string) => {
+    async (templateId: string, format: FormatId = 'portrait') => {
       const template = getTemplateById(templateId);
       if (!template) {
         notify('Template not found.', 'error');
         return;
       }
       try {
-        const templateAssets = await loadTemplateAssets(template);
+        const templateAssets = await loadTemplateAssets(template, format);
         setAssets((prev) => ({ ...prev, ...templateAssets }));
-        const doc = template.createDocument();
+        const doc = template.createDocument(format);
         history.reset(doc);
         setSelectedId(null);
         transientStore.set(null);
-        notify(`Applied "${template.meta.name}" template (${template.meta.slideCount} slides).`);
+        const formatLabel = FORMATS.find((f) => f.id === format)?.label || 'Portrait';
+        notify(`Applied "${template.meta.name}" (${formatLabel}, ${template.meta.slideCount} slides).`);
       } catch (error) {
         notify(error instanceof Error ? error.message : 'Could not load template assets.', 'error');
       }

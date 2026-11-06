@@ -1,8 +1,9 @@
-import type { EditorDocument, EditorElement } from '../types/editor';
+import type { EditorDocument, EditorElement, FormatId } from '../types/editor';
 import type { CarouselTemplate } from '../types/template';
 import { idbGet, idbPut } from './storage';
 import { assetFromBlob } from './image';
 import { drawImageHolder } from './imageHolder';
+import { adaptDocumentToFormat, formatPreset } from './formats';
 
 function baseElement(partial: Pick<EditorElement, 'id' | 'name' | 'x' | 'y' | 'width' | 'height'>) {
   return {
@@ -17,8 +18,8 @@ function baseElement(partial: Pick<EditorElement, 'id' | 'name' | 'x' | 'y' | 'w
 // -------------------------------------------------------------
 // TEMPLATE 1: TORN ROMANCE (Terracotta & Torn Paper Collage)
 // -------------------------------------------------------------
-function createTornRomanceDoc(): EditorDocument {
-  return {
+function createTornRomanceDoc(format: FormatId = 'portrait'): EditorDocument {
+  const doc: EditorDocument = {
     name: 'Torn Romance',
     canvas: {
       format: 'portrait',
@@ -293,13 +294,14 @@ function createTornRomanceDoc(): EditorDocument {
       },
     ],
   };
+  return format === 'portrait' ? doc : adaptDocumentToFormat(doc, format);
 }
 
 // -------------------------------------------------------------
 // TEMPLATE 2: MODERN NOIR (High-Contrast Film Editorial)
 // -------------------------------------------------------------
-function createModernNoirDoc(): EditorDocument {
-  return {
+function createModernNoirDoc(format: FormatId = 'portrait'): EditorDocument {
+  const doc: EditorDocument = {
     name: 'Modern Noir',
     canvas: {
       format: 'portrait',
@@ -555,13 +557,14 @@ function createModernNoirDoc(): EditorDocument {
       },
     ],
   };
+  return format === 'portrait' ? doc : adaptDocumentToFormat(doc, format);
 }
 
 // -------------------------------------------------------------
 // TEMPLATE 3: CHÂTEAU CLASSIC (Architectural Symmetry & Romance)
 // -------------------------------------------------------------
-function createChateauClassicDoc(): EditorDocument {
-  return {
+function createChateauClassicDoc(format: FormatId = 'portrait'): EditorDocument {
+  const doc: EditorDocument = {
     name: 'Château Romance',
     canvas: {
       format: 'portrait',
@@ -763,13 +766,14 @@ function createChateauClassicDoc(): EditorDocument {
       },
     ],
   };
+  return format === 'portrait' ? doc : adaptDocumentToFormat(doc, format);
 }
 
 // -------------------------------------------------------------
 // TEMPLATE 4: FOREST EDITORIAL (Organic & Split-Tone Woodland)
 // -------------------------------------------------------------
-function createForestEditorialDoc(): EditorDocument {
-  return {
+function createForestEditorialDoc(format: FormatId = 'portrait'): EditorDocument {
+  const doc: EditorDocument = {
     name: 'Forest Story',
     canvas: {
       format: 'portrait',
@@ -963,13 +967,14 @@ function createForestEditorialDoc(): EditorDocument {
       },
     ],
   };
+  return format === 'portrait' ? doc : adaptDocumentToFormat(doc, format);
 }
 
 // -------------------------------------------------------------
 // TEMPLATE 5: BOHO NOMAD (Earthy Wanderlust & Pampas Collage)
 // -------------------------------------------------------------
-function createBohoNomadDoc(): EditorDocument {
-  return {
+function createBohoNomadDoc(format: FormatId = 'portrait'): EditorDocument {
+  const doc: EditorDocument = {
     name: 'Boho Nomad',
     canvas: {
       format: 'portrait',
@@ -1294,13 +1299,14 @@ function createBohoNomadDoc(): EditorDocument {
       },
     ],
   };
+  return format === 'portrait' ? doc : adaptDocumentToFormat(doc, format);
 }
 
 // -------------------------------------------------------------
 // TEMPLATE 6: SUN-DRENCHED MOSAIC (Mediterranean Light & Editorial Collage)
 // -------------------------------------------------------------
-function createSunDrenchedDoc(): EditorDocument {
-  return {
+function createSunDrenchedDoc(format: FormatId = 'portrait'): EditorDocument {
+  const doc: EditorDocument = {
     name: 'Sun-Drenched Mosaic',
     canvas: {
       format: 'portrait',
@@ -1678,13 +1684,14 @@ function createSunDrenchedDoc(): EditorDocument {
       },
     ],
   };
+  return format === 'portrait' ? doc : adaptDocumentToFormat(doc, format);
 }
 
 // -------------------------------------------------------------
 // TEMPLATE 7: AUTUMN HYGGE (Cozy Café, Bakery & Harvest Studio)
 // -------------------------------------------------------------
-function createAutumnHyggeDoc(): EditorDocument {
-  return {
+function createAutumnHyggeDoc(format: FormatId = 'portrait'): EditorDocument {
+  const doc: EditorDocument = {
     name: 'Autumn Hygge',
     canvas: {
       format: 'portrait',
@@ -1978,6 +1985,7 @@ function createAutumnHyggeDoc(): EditorDocument {
       },
     ],
   };
+  return format === 'portrait' ? doc : adaptDocumentToFormat(doc, format);
 }
 
 // -------------------------------------------------------------
@@ -2231,9 +2239,9 @@ export function getTemplateById(id: string) {
   return CAROUSEL_TEMPLATES.find((t) => t.meta.id === id);
 }
 
-export async function loadTemplateAssets(template: CarouselTemplate) {
+export async function loadTemplateAssets(template: CarouselTemplate, format: FormatId = 'portrait') {
   const map: Record<string, import('../types/editor').ImageAsset> = {};
-  const doc = template.createDocument();
+  const doc = template.createDocument(format);
   const imageElements = doc.elements.filter((el): el is import('../types/editor').ImageElement => el.type === 'image');
 
   const dimMap: Record<string, { width: number; height: number; name: string }> = {};
@@ -2246,8 +2254,8 @@ export async function loadTemplateAssets(template: CarouselTemplate) {
   await Promise.all(
     Object.keys(template.assets).map(async (imageId) => {
       try {
-        const dim = dimMap[imageId] || { width: 1080, height: 1350, name: 'Photo' };
-        const storageKey = `holder_v2_${template.meta.id}_${imageId}_${dim.width}_${dim.height}`;
+        const dim = dimMap[imageId] || { width: 1080, height: formatPreset(format).height, name: 'Photo' };
+        const storageKey = `holder_v3_${template.meta.id}_${format}_${imageId}_${dim.width}_${dim.height}`;
         let blob = await idbGet(storageKey);
         if (!blob) {
           blob = await drawImageHolder(dim.width, dim.height, 'Add Photo', 'Click or tap to choose image');

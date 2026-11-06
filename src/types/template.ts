@@ -18,7 +18,7 @@ export type TemplateMeta = {
 
 export type CarouselTemplate = {
   meta: TemplateMeta;
-  createDocument: () => EditorDocument;
+  createDocument: (format?: FormatId) => EditorDocument;
   assets: Record<string, string>; // imageId -> URL or relative path
 };
 

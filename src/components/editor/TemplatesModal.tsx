@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Sparkles, X, ArrowRight, Layers, LayoutTemplate, Eye } from 'lucide-react';
+import { Check, Sparkles, X, ArrowRight, Layers, LayoutTemplate, Eye, Smartphone, Square, Monitor } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 import { CAROUSEL_TEMPLATES, type TemplateCategory, type CarouselTemplate } from '../../utils/template';
+import { FORMATS, formatPreset } from '../../utils/formats';
+import type { FormatId } from '../../types/editor';
 
 export function TemplatesModal({ onClose }: { onClose: () => void }) {
   const { applyTemplate, document: doc } = useEditor();
+  const [selectedFormat, setSelectedFormat] = useState<FormatId>(doc.canvas.format || 'portrait');
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory>('All');
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<CarouselTemplate | null>(null);
   const [closing, setClosing] = useState(false);
   const [inspectClosing, setInspectClosing] = useState(false);
+
+  const activeFormatMeta = useMemo(() => formatPreset(selectedFormat), [selectedFormat]);
 
   const handleClose = () => {
     if (closing) return;
@@ -53,10 +58,10 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
     return CAROUSEL_TEMPLATES.filter((t) => t.meta.category === selectedCategory);
   }, [selectedCategory]);
 
-  const handleApply = async (templateId: string) => {
+  const handleApply = async (templateId: string, format: FormatId = selectedFormat) => {
     setApplyingId(templateId);
     try {
-      await applyTemplate(templateId);
+      await applyTemplate(templateId, format);
       handleClose();
     } finally {
       setApplyingId(null);
@@ -64,6 +69,17 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
   };
 
   const hasContent = doc.elements.length > 0;
+
+  const formatIcon = (formatId: FormatId) => {
+    switch (formatId) {
+      case 'portrait':
+        return <Smartphone size={13} />;
+      case 'square':
+        return <Square size={13} />;
+      case 'landscape':
+        return <Monitor size={13} />;
+    }
+  };
 
   return (
     <div className={`scrim ${closing ? 'closing' : ''}`} onMouseDown={handleClose} role="presentation">
@@ -85,7 +101,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                 <span className="templates-count-badge">{filteredTemplates.length} layouts</span>
               </div>
               <p className="templates-modal-sub">
-                Pre-designed seamless continuous carousels with panoramas, layered collages, and editorial framing.
+                Pre-designed continuous carousels with panoramas, layered collages, and editorial framing. Compatible with Portrait, Square, and Landscape formats.
               </p>
             </div>
           </div>
@@ -94,24 +110,45 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
           </button>
         </header>
 
-        {/* Filter categories */}
-        <div className="templates-filter-bar">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              className={`templates-filter-btn ${selectedCategory === cat ? 'active' : ''}`}
-              onClick={() => setSelectedCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Toolbar row with Format Selector and Category Filters */}
+        <div className="templates-toolbar-row">
+          <div className="templates-format-selector" role="group" aria-label="Select carousel format">
+            <span className="templates-format-caption">Format:</span>
+            <div className="templates-format-pills">
+              {FORMATS.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  className={`templates-format-pill ${selectedFormat === f.id ? 'active' : ''}`}
+                  onClick={() => setSelectedFormat(f.id)}
+                  title={`${f.label} (${f.aspect}) - ${f.width}×${f.height}px`}
+                >
+                  {formatIcon(f.id)}
+                  <span className="templates-format-name">{f.label}</span>
+                  <span className="templates-format-aspect">{f.aspect}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="templates-filter-bar">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                className={`templates-filter-btn ${selectedCategory === cat ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
         {hasContent && (
           <div className="templates-replace-notice">
             <Sparkles size={14} />
-            <span>Selecting a template will replace the current canvas layers.</span>
+            <span>Selecting a template will replace the current canvas layers and adapt to <strong>{activeFormatMeta.label} ({activeFormatMeta.aspect})</strong>.</span>
           </div>
         )}
 
@@ -124,7 +161,9 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                 {/* Panorama strip preview */}
                 <div className="template-preview-container">
                   <div className="template-preview-top-bar">
-                    <span className="template-preview-badge">10 Slides • 4:5 Portrait</span>
+                    <span className="template-preview-badge">
+                      {template.meta.slideCount} Slides • {activeFormatMeta.label} ({activeFormatMeta.aspect})
+                    </span>
                     <div className="template-preview-quick-actions">
                       <button
                         type="button"
@@ -141,9 +180,9 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                         disabled={isApplying}
                         onClick={(e) => {
                           e.stopPropagation();
-                          void handleApply(template.meta.id);
+                          void handleApply(template.meta.id, selectedFormat);
                         }}
-                        title="Use this template"
+                        title={`Use this template in ${activeFormatMeta.label}`}
                       >
                         <ArrowRight size={12} />
                         Use template
@@ -153,7 +192,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                   <div
                     className="template-preview-wrap"
                     onClick={() => setPreviewTemplate(template)}
-                    title="Click or swipe to inspect all 10 slides"
+                    title={`Click or swipe to inspect all ${template.meta.slideCount} slides`}
                   >
                     <div className="template-preview-track">
                       <img
@@ -162,9 +201,9 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                         className="template-strip-img"
                         loading="lazy"
                       />
-                      {/* Visual slide guide lines (10 segments) */}
+                      {/* Visual slide guide lines */}
                       <div className="template-slide-guides" aria-hidden="true">
-                        {Array.from({ length: 10 }).map((_, i) => (
+                        {Array.from({ length: template.meta.slideCount }).map((_, i) => (
                           <div key={i} className="template-guide-seg">
                             <span className="template-guide-num">{i + 1}</span>
                           </div>
@@ -173,7 +212,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                     </div>
                   </div>
                   <div className="template-swipe-notice" aria-hidden="true">
-                    <span>Swipe horizontally to view all 10 slides →</span>
+                    <span>Swipe horizontally to view all {template.meta.slideCount} slides →</span>
                   </div>
                 </div>
 
@@ -211,14 +250,14 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                       type="button"
                       className="primary-btn template-apply-btn"
                       disabled={isApplying}
-                      onClick={() => handleApply(template.meta.id)}
+                      onClick={() => handleApply(template.meta.id, selectedFormat)}
                     >
                       {isApplying ? (
                         <>Loading assets...</>
                       ) : (
                         <>
                           <ArrowRight size={14} />
-                          Use template
+                          Use template ({activeFormatMeta.label})
                         </>
                       )}
                     </button>
@@ -232,7 +271,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
         {/* Modal footer */}
         <footer className="templates-modal-foot">
           <span className="templates-foot-hint">
-            Tip: All images, typography, and frame shapes can be customized after loading.
+            Format: {activeFormatMeta.label} ({activeFormatMeta.width} × {activeFormatMeta.height}) • All images, typography, and frame shapes adapt automatically and remain fully editable.
           </span>
           <button type="button" className="text-btn" onClick={handleClose}>
             Close
@@ -255,11 +294,11 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                     onClick={() => {
                       const id = previewTemplate.meta.id;
                       setPreviewTemplate(null);
-                      void handleApply(id);
+                      void handleApply(id, selectedFormat);
                     }}
                   >
                     <ArrowRight size={14} />
-                    Use template
+                    Use template ({activeFormatMeta.label})
                   </button>
                   <button
                     type="button"
@@ -271,6 +310,26 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                   </button>
                 </div>
               </div>
+
+              {/* Format switcher inside inspect dialog */}
+              <div className="template-inspect-format-bar">
+                <span className="template-inspect-format-caption">Choose format for this template:</span>
+                <div className="templates-format-pills">
+                  {FORMATS.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className={`templates-format-pill ${selectedFormat === f.id ? 'active' : ''}`}
+                      onClick={() => setSelectedFormat(f.id)}
+                    >
+                      {formatIcon(f.id)}
+                      <span className="templates-format-name">{f.label}</span>
+                      <span className="templates-format-aspect">{f.aspect}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="template-inspect-scroll">
                 <div className="template-inspect-banner-box">
                   <img
@@ -279,7 +338,7 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                     className="template-inspect-banner-img"
                   />
                   <div className="template-slide-guides" aria-hidden="true">
-                    {Array.from({ length: 10 }).map((_, i) => (
+                    {Array.from({ length: previewTemplate.meta.slideCount }).map((_, i) => (
                       <div key={i} className="template-guide-seg">
                         <span className="template-guide-num">{i + 1}</span>
                       </div>
@@ -312,11 +371,11 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
                     onClick={() => {
                       const id = previewTemplate.meta.id;
                       setPreviewTemplate(null);
-                      void handleApply(id);
+                      void handleApply(id, selectedFormat);
                     }}
                   >
                     <ArrowRight size={14} />
-                    Use template (10 Slides)
+                    Use template ({previewTemplate.meta.slideCount} Slides • {activeFormatMeta.label})
                   </button>
                 </div>
               </div>
@@ -327,4 +386,3 @@ export function TemplatesModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
-
