@@ -1,4 +1,10 @@
 import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
   ArrowDown,
   ArrowUp,
   ChevronLeft,
@@ -24,6 +30,45 @@ interface QuickControlsProps {
 export function QuickControls({ element, zoom, pan, stageSize, onOpenGallery }: QuickControlsProps) {
   const { document: doc, patchElement, moveLayer, nudge, duplicateSelected, deleteSelected, openCrop } = useEditor();
 
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [measuredWidth, setMeasuredWidth] = useState<number>(() => (element.type === 'image' ? 460 : 320));
+  const [scrollState, setScrollState] = useState<{ canLeft: boolean; canRight: boolean }>({
+    canLeft: false,
+    canRight: false,
+  });
+
+  const checkScroll = useCallback(() => {
+    const el = toolbarRef.current;
+    if (!el) return;
+    const canLeft = el.scrollLeft > 6;
+    const canRight = el.scrollLeft + el.clientWidth < el.scrollWidth - 6;
+    setScrollState((prev) => (prev.canLeft !== canLeft || prev.canRight !== canRight ? { canLeft, canRight } : prev));
+  }, []);
+
+  useLayoutEffect(() => {
+    const el = toolbarRef.current;
+    if (!el) return;
+
+    el.scrollLeft = 0;
+
+    const updateDimensions = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0) {
+        setMeasuredWidth(rect.width);
+      }
+      checkScroll();
+    };
+
+    updateDimensions();
+
+    const observer = new ResizeObserver(() => {
+      updateDimensions();
+    });
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [element.id, element.type, element.locked, checkScroll]);
+
   const elementIndex = doc.elements.findIndex((item) => item.id === element.id);
   const isTopLayer = elementIndex === doc.elements.length - 1;
   const isBottomLayer = elementIndex === 0;
@@ -34,23 +79,27 @@ export function QuickControls({ element, zoom, pan, stageSize, onOpenGallery }: 
   const elScreenW = element.width * zoom;
   const elScreenH = element.height * zoom;
 
-  const barWidth = 310;
+  const barWidth = measuredWidth;
   const barHeight = 40;
 
   const rawLeft = elScreenX + elScreenW / 2 - barWidth / 2;
-  const left = Math.max(10, Math.min(stageSize.w - barWidth - 10, rawLeft));
+  const maxLeft = Math.max(8, stageSize.w - barWidth - 8);
+  const left = Math.max(8, Math.min(maxLeft, rawLeft));
 
   const placeAbove = elScreenY - barHeight - 14 >= 10;
-  const top = placeAbove
-    ? elScreenY - barHeight - 14
-    : Math.min(stageSize.h - barHeight - 10, elScreenY + elScreenH + 14);
+  const top = Math.max(
+    10,
+    placeAbove ? elScreenY - barHeight - 14 : Math.min(stageSize.h - barHeight - 10, elScreenY + elScreenH + 14),
+  );
 
   return (
     <div
-      className={`quick-controls ${element.locked ? 'is-locked' : ''}`}
+      ref={toolbarRef}
+      className={`quick-controls ${element.locked ? 'is-locked' : ''} ${scrollState.canLeft ? 'can-scroll-left' : ''} ${scrollState.canRight ? 'can-scroll-right' : ''}`}
       style={{ left: `${left}px`, top: `${top}px` }}
       onMouseDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
+      onScroll={checkScroll}
       role="toolbar"
       aria-label="Focused element controls"
     >
